@@ -134,6 +134,8 @@ id action_zip
 id addServerBtn
 id back
 id bar
+id breadcrumb
+id breadcrumbScroll
 id chevron
 id clear
 id dotFirst
@@ -141,7 +143,6 @@ id dotSecond
 id empty
 id emptyText
 id fab
-id flipper
 id grantBtn
 id hint
 id icon
@@ -151,6 +152,7 @@ id list
 id loading
 id meta
 id name
+id pager
 id paneEmpty
 id paneEmptyText
 id paneLeft

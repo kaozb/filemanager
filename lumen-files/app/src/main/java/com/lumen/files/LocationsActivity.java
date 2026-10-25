@@ -7,20 +7,18 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.GridLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toolbar;
-import android.widget.ViewFlipper;
 
 import com.lumen.files.webdav.WebDavClient;
 
@@ -38,7 +36,9 @@ import java.util.Locale;
 public final class LocationsActivity extends BaseActivity implements PaneController.Host {
 
     private Toolbar toolbar;
-    private ViewFlipper flipper;
+    private PanePager pager;
+    private HorizontalScrollView breadcrumbScroll;
+    private LinearLayout breadcrumb;
     private View dotFirst;
     private View dotSecond;
 
@@ -56,10 +56,6 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     private int page;
     private boolean firstResume;
-    private float downX;
-    private float downY;
-    private boolean dragging;
-    private boolean multiTouch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +81,9 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             return true;
         });
 
-        flipper = findViewById(R.id.flipper);
+        pager = findViewById(R.id.pager);
+        breadcrumbScroll = findViewById(R.id.breadcrumbScroll);
+        breadcrumb = findViewById(R.id.breadcrumb);
         dotFirst = findViewById(R.id.dotFirst);
         dotSecond = findViewById(R.id.dotSecond);
 
@@ -93,9 +91,12 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         right = new PaneController(this, this, 1, findViewById(R.id.paneRight));
 
         page = savedInstanceState == null ? 0 : savedInstanceState.getInt("page", 0);
-        if (page == 1) {
-            flipper.setDisplayedChild(1);
-        }
+        pager.setCallback(target -> {
+            page = target;
+            updateDots();
+            updateToolbar();
+        });
+        pager.setPage(page, false);
         updateDots();
         updateToolbar();
 
@@ -147,65 +148,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     // ------------------------------------------------------------------ 左右滑动切面板
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                downX = event.getX();
-                downY = event.getY();
-                dragging = false;
-                multiTouch = false;
-                break;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                // 双指（捏合缩放行高）不触发翻页
-                multiTouch = true;
-                dragging = false;
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (!multiTouch) {
-                    float dx = event.getX() - downX;
-                    float dy = event.getY() - downY;
-                    if (Math.abs(dx) > dp(28) && Math.abs(dx) > Math.abs(dy) * 1.4f) {
-                        dragging = true;
-                    }
-                }
-                break;
-            case MotionEvent.ACTION_UP:
-                if (dragging && !multiTouch) {
-                    float moved = event.getX() - downX;
-                    if (moved < -dp(64) && page == 0) {
-                        showPage(1);
-                    } else if (moved > dp(64) && page == 1) {
-                        showPage(0);
-                    }
-                }
-                dragging = false;
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                dragging = false;
-                break;
-            default:
-                break;
-        }
-        return super.dispatchTouchEvent(event);
-    }
-
     private void showPage(int target) {
-        if (target == page) {
-            return;
-        }
-        if (target == 1) {
-            flipper.setInAnimation(AnimationUtils.loadAnimation(this, R.anim.page_in_right));
-            flipper.setOutAnimation(AnimationUtils.loadAnimation(this, R.anim.page_out_left));
-            flipper.showNext();
-        } else {
-            flipper.setInAnimation(AnimationUtils.loadAnimation(this, R.anim.page_in_left));
-            flipper.setOutAnimation(AnimationUtils.loadAnimation(this, R.anim.page_out_right));
-            flipper.showPrevious();
-        }
-        page = target;
-        updateDots();
-        updateToolbar();
+        pager.setPage(target, true);
     }
 
     private void updateDots() {
@@ -217,7 +161,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         return page == 0 ? left : right;
     }
 
-    /** 顶栏跟随当前面板：标题 = 存储对象/目录名，左侧箭头 = 上一级。 */
+    /** 顶栏跟随当前面板：标题 = 当前位置，面包屑 = 存储器内的层级路径。 */
     private void updateToolbar() {
         PaneController pane = currentPane();
         toolbar.setTitle(pane.title());
@@ -228,6 +172,49 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         } else {
             toolbar.setNavigationIcon(null);
         }
+        rebuildBreadcrumb(pane);
+    }
+
+    /** 顶栏卡片底部的路径面包屑：过长可横向滑动，点某一级直接跳转。 */
+    private void rebuildBreadcrumb(PaneController pane) {
+        breadcrumb.removeAllViews();
+        String[] paths = pane.crumbPaths();
+        int last = paths.length - 1;
+        for (int i = 0; i <= last; i++) {
+            if (i > 0) {
+                TextView separator = new TextView(this);
+                separator.setText("›");
+                separator.setTextSize(11);
+                separator.setTextColor(secondaryColor);
+                separator.setGravity(Gravity.CENTER_VERTICAL);
+                breadcrumb.addView(separator, new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.MATCH_PARENT));
+            }
+            final String target = paths[i];
+            TextView crumb = new TextView(this);
+            crumb.setText(i == 0 ? pane.rootLabel() : lastSegment(target));
+            crumb.setTextSize(11);
+            crumb.setTextColor(i == last ? textColor : secondaryColor);
+            crumb.setGravity(Gravity.CENTER_VERTICAL);
+            crumb.setPadding(dp(3), 0, dp(3), 0);
+            if (i < last) {
+                crumb.setOnClickListener(v -> pane.navigateTo(target));
+            }
+            breadcrumb.addView(crumb, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT));
+        }
+        breadcrumbScroll.post(() -> breadcrumbScroll.fullScroll(View.FOCUS_RIGHT));
+    }
+
+    private static String lastSegment(String path) {
+        String value = path == null ? "" : path;
+        while (value.length() > 1 && value.endsWith("/")) {
+            value = value.substring(0, value.length() - 1);
+        }
+        int slash = value.lastIndexOf('/');
+        return slash < 0 ? value : value.substring(slash + 1);
     }
 
     @Override

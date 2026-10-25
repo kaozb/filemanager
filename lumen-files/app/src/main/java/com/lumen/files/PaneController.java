@@ -136,20 +136,45 @@ public final class PaneController {
         return serverId;
     }
 
-    /** 顶栏标题：显示存储器内的目录（相对路径），根目录时只显示存储对象名称。 */
+    /** 存储对象名称（本地卷名或 WebDAV 服务器名）。 */
+    String rootLabel() {
+        return fs.isLocal() ? StorageUtil.label(new File(rootPath)) : fs.label();
+    }
+
+    /** 顶栏标题：根目录显示存储对象名称，子目录显示当前目录名。 */
     String title() {
-        String root = fs.isLocal() ? StorageUtil.label(new File(rootPath)) : fs.label();
         String current = trimTrailing(path);
+        if (current.equals(trimTrailing(rootPath)) || "/".equals(current)) {
+            return rootLabel();
+        }
+        int slash = current.lastIndexOf('/');
+        return slash < 0 ? current : current.substring(slash + 1);
+    }
+
+    /** 面包屑层级路径：0 = 存储根，末位 = 当前目录。 */
+    String[] crumbPaths() {
         String base = trimTrailing(rootPath);
-        if (current.equals(base) || "/".equals(current)) {
-            return root;
+        ArrayList<String> chain = new ArrayList<>();
+        String current = trimTrailing(path);
+        int guard = 0;
+        while (!current.equals(base) && !"/".equals(current) && guard++ < 64) {
+            chain.add(current);
+            String parent = trimTrailing(fs.parent(current));
+            if (parent.isEmpty() || parent.equals(current)) {
+                break;
+            }
+            current = parent;
         }
-        String relative = current.startsWith(base)
-                ? current.substring(base.length()) : current;
-        while (relative.startsWith("/")) {
-            relative = relative.substring(1);
-        }
-        return root + " › " + relative.replace("/", " › ");
+        Collections.reverse(chain);
+        ArrayList<String> out = new ArrayList<>();
+        out.add(base.isEmpty() ? "/" : base);
+        out.addAll(chain);
+        return out.toArray(new String[0]);
+    }
+
+    /** 点击面包屑层级直接跳转。 */
+    void navigateTo(String target) {
+        load(target);
     }
 
     boolean canGoUp() {
@@ -294,21 +319,22 @@ public final class PaneController {
     }
 
     private void showItemMenu(final Entry entry) {
-        final String[] options = {"打开", "重命名", "删除", "复制到另一侧", "详情"};
-        activity.showActionSheet(entry.name, options, 2, which -> {
-            String option = options[which];
-            if ("打开".equals(option)) {
-                openEntry(entry);
-            } else if ("重命名".equals(option)) {
-                renameDialog(entry);
-            } else if ("删除".equals(option)) {
-                deleteDialog(entry);
-            } else if ("复制到另一侧".equals(option)) {
-                copyToOther(entry);
-            } else {
-                details(entry);
-            }
-        });
+        final String[] options = {"打开", "重命名", "删除", "复制到另一侧"};
+        new AlertDialog.Builder(activity)
+                .setTitle(entry.name)
+                .setItems(options, (dialog, which) -> {
+                    String option = options[which];
+                    if ("打开".equals(option)) {
+                        openEntry(entry);
+                    } else if ("重命名".equals(option)) {
+                        renameDialog(entry);
+                    } else if ("删除".equals(option)) {
+                        deleteDialog(entry);
+                    } else {
+                        copyToOther(entry);
+                    }
+                })
+                .show();
     }
 
     /** 面板菜单：宿主在长按顶栏标题时弹出。 */
@@ -427,19 +453,6 @@ public final class PaneController {
                     Bg.toast(activity, "已复制到另一侧");
                     target.reload();
                 });
-    }
-
-    private void details(Entry entry) {
-        String message = "名称：" + entry.name
-                + "\n路径：" + entry.path
-                + "\n类型：" + (entry.dir ? "文件夹" : "文件")
-                + (entry.dir ? "" : "\n大小：" + Format.size(entry.size))
-                + "\n修改时间：" + Format.date(entry.modified);
-        new AlertDialog.Builder(activity)
-                .setTitle("详情")
-                .setMessage(message)
-                .setPositiveButton("关闭", null)
-                .show();
     }
 
     private void openEntry(final Entry entry) {
