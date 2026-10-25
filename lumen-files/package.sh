@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 一键打包：清理缓存 → Debug 构建 → 对齐 → 签名 → 验证 → 清理中间文件
+# 一键打包：版本自增 → 清理缓存 → Debug 构建 → 对齐 → 签名 → 验证 → 清理中间文件
 # 用法：./package.sh
 set -euo pipefail
 
@@ -21,6 +21,19 @@ APKSIGNER="$BUILD_TOOLS/apksigner"
 KS=keystore/mibo.jks
 APK_SRC=app/build/outputs/apk/debug/app-debug.apk
 APK_OUT=LumenFiles.apk
+VERSION_FILE=version.properties
+
+# ------------------------------------------------ 版本号：versionCode 每版 +1
+#                                 versionName 取当前时刻 MM.dd.H.mm
+if [ ! -f "$VERSION_FILE" ]; then
+  printf 'versionCode=1\n' > "$VERSION_FILE"
+fi
+CODE="$(sed -n 's/^versionCode=//p' "$VERSION_FILE" | tr -dc '0-9')"
+CODE=$(( ${CODE:-0} + 1 ))
+VERSION_NAME="$(date +%m.%d.%-H.%M)"
+APP_LABEL="超级文件 $CODE"
+printf 'versionCode=%s\n' "$CODE" > "$VERSION_FILE"
+echo "==> 版本：versionCode=$CODE  versionName=$VERSION_NAME  应用名=$APP_LABEL"
 
 # ---------------------------------------------------- 0. 清理缓存（避免旧产物混入）
 echo "==> 清理缓存"
@@ -30,7 +43,7 @@ rm -f aligned.apk "$APK_OUT" "$APK_OUT.idsig"
 
 # ------------------------------------------------------------ 1. Debug 构建
 echo "==> 构建"
-gradle assembleDebug --console=plain
+gradle assembleDebug -PappVersionName="$VERSION_NAME" --console=plain
 
 # ---------------------------------------------------------------- 2. 对齐
 echo "==> 对齐"
@@ -49,4 +62,4 @@ echo "==> 验证"
 # ------------------------------------------------------ 5. 清理中间文件
 rm -f aligned.apk "$APK_OUT.idsig"
 
-echo "==> 完成：$APK_OUT ($(du -h "$APK_OUT" | cut -f1))"
+echo "==> 完成：$APK_OUT ($(du -h "$APK_OUT" | cut -f1))  $APP_LABEL / $VERSION_NAME"

@@ -44,6 +44,24 @@ sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
 > 该密钥为项目唯一正式签名密钥，所有对外发布的 APK 一律用它签名；`build/lumen.jks` 为旧调试密钥，已弃用（两者签名不兼容，互相覆盖安装需先卸载）。
 
+## 版本号规则
+
+每次 `./package.sh` 打包自动执行，无需手工改：
+
+| 项 | 规则 | 示例 |
+|---|---|---|
+| 应用名称（桌面显示） | `超级文件 N`，N 每版 +1 | `超级文件 2` |
+| versionCode | 每版 +1，记录在 `version.properties` | `2` |
+| versionName | 打包时刻 `MM.dd.H.mm`（H 不补零） | 2026-10-26 01:07 → `10.26.1.07` |
+
+`version.properties` 只存 `versionCode`，请勿回退；Gradle 侧读取它并拼接应用名称：
+
+```groovy
+versionCode appVersionCode          // 来自 version.properties
+versionName appVersionName          // 打包时间，或 -PappVersionName 传入
+manifestPlaceholders = [appLabel: appLabel]   // AndroidManifest 的 android:label="${appLabel}"
+```
+
 ## 打包命令
 
 推荐直接运行脚本（清理 + 构建 + 对齐 + 签名 + 验证 + 清理中间文件）：
