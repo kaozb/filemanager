@@ -4,12 +4,12 @@
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/layout/dialog_input.xml"
     },
     {
-        "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_folder.xml.flat",
-        "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_folder.xml"
-    },
-    {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_image.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_image.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_folder.xml.flat",
+        "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_folder.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_toggle_thumb.xml.flat",
@@ -38,6 +38,10 @@
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_bg_dot.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/bg_dot.xml"
+    },
+    {
+        "merged": "com.lumen.files.app-debug-4:/drawable_bg_check_off.xml.flat",
+        "source": "com.lumen.files.app-main-6:/drawable/bg_check_off.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_download.xml.flat",
@@ -72,8 +76,24 @@
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_shield.xml"
     },
     {
+        "merged": "com.lumen.files.app-debug-4:/layout_activity_search.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/activity_search.xml"
+    },
+    {
+        "merged": "com.lumen.files.app-debug-4:/layout_activity_locations.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/activity_locations.xml"
+    },
+    {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_file_add.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_file_add.xml"
+    },
+    {
+        "merged": "com.lumen.files.app-debug-4:/layout_bar_selection.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/bar_selection.xml"
+    },
+    {
+        "merged": "com.lumen.files.app-debug-4:/layout_item_file.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/item_file.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/anim_page_in_right.xml.flat",
@@ -168,6 +188,10 @@
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_copy.xml"
     },
     {
+        "merged": "com.lumen.files.app-debug-4:/drawable_bg_check_on.xml.flat",
+        "source": "com.lumen.files.app-main-6:/drawable/bg_check_on.xml"
+    },
+    {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/menu_menu_multi_pane.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/menu/menu_multi_pane.xml"
     },
@@ -240,6 +264,10 @@
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/toggle_track.xml"
     },
     {
+        "merged": "com.lumen.files.app-debug-4:/layout_pane_file.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/pane_file.xml"
+    },
+    {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_edit.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_edit.xml"
     },
@@ -254,6 +282,10 @@
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/layout_activity_locations.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/layout/activity_locations.xml"
+    },
+    {
+        "merged": "com.lumen.files.app-debug-4:/layout_activity_browser.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/activity_browser.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_code.xml.flat",

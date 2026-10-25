@@ -18,6 +18,8 @@
             android:layout_height="match_parent"
             android:layout_marginEnd="48dp" />
 
+        <include layout="@layout/bar_selection" />
+
     </android.widget.Toolbar>
 
     <!-- 面板指示点：左右滑动切换两个面板 -->

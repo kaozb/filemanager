@@ -3,10 +3,7 @@ package com.lumen.files;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Environment;
-import android.view.ActionMode;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.AdapterView;
@@ -27,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * 首页两个滑动面板中的一栏：独立的数据源、路径与列表。
@@ -43,6 +41,9 @@ public final class PaneController {
 
         /** 面板导航状态变化（进入/返回目录、切换数据源），Host 据此刷新顶栏。 */
         void onPaneChanged(PaneController pane);
+
+        /** 面板多选状态变化（进入/退出/勾选数变化），Host 据此刷新顶栏操作栏。 */
+        void onSelectionChanged(PaneController pane);
 
         PaneController other(PaneController pane);
     }
@@ -65,7 +66,7 @@ public final class PaneController {
     private int serverId = -1;
     private String rootPath;
     private String path;
-    private ActionMode actionMode;
+    private boolean selecting;
 
     private boolean showHidden;
     private int sortMode;
@@ -228,7 +229,7 @@ public final class PaneController {
     void load(final String target) {
         final int current = ++generation;
         final Fs source = fs;
-        finishSelection();
+        exitSelection();
         loadingView.setVisibility(View.VISIBLE);
         emptyView.setVisibility(View.GONE);
         Bg.pool().execute(() -> {
@@ -309,7 +310,7 @@ public final class PaneController {
     }
 
     private void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (actionMode != null) {
+        if (selecting) {
             toggleSelection(position);
             return;
         }
@@ -322,11 +323,8 @@ public final class PaneController {
     }
 
     private boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        if (actionMode == null) {
+        if (!selecting) {
             showItemMenu(adapter.getItem(position), position);
-        } else {
-            listView.setItemChecked(position, true);
-            updateSelectionTitle();
         }
         return true;
     }
@@ -336,7 +334,7 @@ public final class PaneController {
         final String[] options = {"多选", "重命名", "复制到另一侧", "详情", "删除"};
         activity.showCenterMenu(entry.name, options, 4, which -> {
             if (which == 0) {
-                enterSelection(position);
+                enterSelection();
             } else if (which == 1) {
                 renameDialog(entry);
             } else if (which == 2) {
@@ -371,117 +369,133 @@ public final class PaneController {
     // ------------------------------------------------------------------ 多选
 
     boolean selectionActive() {
-        return actionMode != null;
+        return selecting;
     }
 
-    void finishSelection() {
-        if (actionMode != null) {
-            actionMode.finish();
+    int selectedCount() {
+        return adapter.selectedCount();
+    }
+
+    boolean allSelected() {
+        return adapter.getCount() > 0 && adapter.selectedCount() >= adapter.getCount();
+    }
+
+    List<Entry> selectedEntries() {
+        return adapter.selectedItems();
+    }
+
+    void enterSelection() {
+        if (selecting) {
+            return;
         }
+        selecting = true;
+        adapter.setSelecting(true);
+        host.onSelectionChanged(this);
     }
 
-    private void enterSelection(int position) {
-        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-        listView.setItemChecked(position, true);
-        actionMode = activity.startActionMode(new PaneSelectionCallback());
-        updateSelectionTitle();
+    void exitSelection() {
+        if (!selecting) {
+            return;
+        }
+        selecting = false;
+        adapter.setSelecting(false);
+        host.onSelectionChanged(this);
     }
 
     private void toggleSelection(int position) {
-        listView.setItemChecked(position, !listView.isItemChecked(position));
-        if (actionMode == null) {
+        adapter.toggle(adapter.getItem(position));
+        host.onSelectionChanged(this);
+    }
+
+    void toggleSelectAll() {
+        if (allSelected()) {
+            adapter.clearSelection();
+        } else {
+            adapter.selectAll();
+        }
+        host.onSelectionChanged(this);
+    }
+
+    // 以下操作由顶栏多选操作栏（SelectionBar）触发
+
+    void copySelected() {
+        List<Entry> selected = selectedEntries();
+        if (selected.isEmpty()) {
             return;
         }
-        if (selectedEntries().isEmpty()) {
-            actionMode.finish();
-        } else {
-            updateSelectionTitle();
-        }
+        exitSelection();
+        copyToOther(selected);
     }
 
-    private void updateSelectionTitle() {
-        if (actionMode != null) {
-            actionMode.setTitle(selectedEntries().size() + " 项");
+    void moveSelected() {
+        List<Entry> selected = selectedEntries();
+        if (selected.isEmpty()) {
+            return;
         }
+        exitSelection();
+        transferToOther(selected, true);
     }
 
-    private List<Entry> selectedEntries() {
-        ArrayList<Entry> selected = new ArrayList<>();
-        android.util.SparseBooleanArray checked = listView.getCheckedItemPositions();
-        if (checked != null) {
-            for (int i = 0; i < checked.size(); i++) {
-                if (!checked.valueAt(i)) {
-                    continue;
-                }
-                int position = checked.keyAt(i);
-                if (position >= 0 && position < adapter.getCount()) {
-                    selected.add(adapter.getItem(position));
-                }
-            }
+    void zipSelected() {
+        final List<Entry> selected = selectedEntries();
+        if (selected.isEmpty()) {
+            return;
         }
-        return selected;
+        View form = LayoutInflater.from(activity).inflate(R.layout.dialog_input, null);
+        final EditText input = form.findViewById(R.id.input);
+        input.setText(folderName() + ".zip");
+        final AlertDialog dialog = new AlertDialog.Builder(activity)
+                .setTitle("压缩为")
+                .setView(form)
+                .setNegativeButton("取消", null)
+                .setPositiveButton("压缩", null)
+                .create();
+        dialog.setOnShowListener(ignored ->
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                    String name = input.getText().toString().trim();
+                    if (name.isEmpty()) {
+                        input.setError("请输入名称");
+                        return;
+                    }
+                    if (!name.toLowerCase(Locale.ROOT).endsWith(".zip")) {
+                        name += ".zip";
+                    }
+                    final String archive = name;
+                    dialog.dismiss();
+                    exitSelection();
+                    Bg.run(activity, "正在压缩…",
+                            () -> FsUtil.zip(fs, selected, fs.child(path, archive)), () -> {
+                                Bg.toast(activity, "压缩完成");
+                                reload();
+                            });
+                }));
+        dialog.show();
     }
 
-    /** 面板多选模式：全选、复制到另一侧、删除。 */
-    private final class PaneSelectionCallback implements ActionMode.Callback {
-
-        @Override
-        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            mode.getMenuInflater().inflate(R.menu.menu_multi_pane, menu);
-            activity.tintMenu(menu);
-            return true;
+    void deleteSelected() {
+        List<Entry> selected = selectedEntries();
+        if (selected.isEmpty()) {
+            return;
         }
+        confirmDelete(selected);
+    }
 
-        @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            updateSelectionTitle();
-            return true;
+    /** 当前目录名，压缩包默认命名用。 */
+    private String folderName() {
+        String current = trimTrailing(path);
+        int slash = current.lastIndexOf('/');
+        if (slash <= 0) {
+            return fs.label();
         }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            List<Entry> selected = selectedEntries();
-            if (selected.isEmpty()) {
-                mode.finish();
-                return true;
-            }
-            int id = item.getItemId();
-            if (id == R.id.action_select_all) {
-                int count = adapter.getCount();
-                boolean allSelected = selected.size() >= count;
-                for (int i = 0; i < count; i++) {
-                    listView.setItemChecked(i, !allSelected);
-                }
-                if (allSelected) {
-                    mode.finish();
-                } else {
-                    updateSelectionTitle();
-                }
-                return true;
-            }
-            if (id == R.id.action_copy) {
-                mode.finish();
-                copyToOther(selected);
-                return true;
-            }
-            if (id == R.id.action_delete) {
-                confirmDelete(selected);
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public void onDestroyActionMode(ActionMode mode) {
-            for (int i = 0; i < adapter.getCount(); i++) {
-                listView.setItemChecked(i, false);
-            }
-            listView.setChoiceMode(ListView.CHOICE_MODE_NONE);
-            actionMode = null;
-        }
+        return current.substring(slash + 1);
     }
 
     private void copyToOther(final List<Entry> entries) {
+        transferToOther(entries, false);
+    }
+
+    /** 把若干条目传到另一侧面板；move=true 时移动并删除源条目。 */
+    private void transferToOther(final List<Entry> entries, final boolean move) {
         final PaneController target = host.other(this);
         if (target == null || target.fs() == null) {
             return;
@@ -493,13 +507,27 @@ public final class PaneController {
             Bg.toast(activity, "两栏在同一目录");
             return;
         }
-        Bg.run(activity, "正在复制…", () -> {
+        Bg.run(activity, move ? "正在移动…" : "正在复制…", () -> {
             for (Entry entry : entries) {
-                FsUtil.copyTree(fs, entry.path, targetFs,
-                        targetFs.child(targetDir, entry.name));
+                String destination = targetFs.child(targetDir, entry.name);
+                if (targetFs.id().equals(fs.id())) {
+                    if (move) {
+                        fs.move(entry.path, destination);
+                    } else {
+                        fs.copy(entry.path, destination);
+                    }
+                } else {
+                    FsUtil.copyTree(fs, entry.path, targetFs, destination);
+                    if (move) {
+                        fs.delete(entry.path);
+                    }
+                }
             }
         }, () -> {
-            Bg.toast(activity, "已复制到另一侧");
+            Bg.toast(activity, move ? "已移动到另一侧" : "已复制到另一侧");
+            if (move) {
+                reload();
+            }
             target.reload();
         });
     }
@@ -510,7 +538,7 @@ public final class PaneController {
                 .setMessage("确定删除这 " + entries.size() + " 个项目吗？此操作不可撤销。")
                 .setNegativeButton("取消", null)
                 .setPositiveButton("删除", (dialog, which) -> {
-                    finishSelection();
+                    exitSelection();
                     Bg.run(activity, "正在删除…", () -> {
                         for (Entry entry : entries) {
                             fs.delete(entry.path);

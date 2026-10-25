@@ -13,6 +13,7 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -29,6 +30,8 @@ public final class FileAdapter extends BaseAdapter {
     private final int baseColor;
     private final HashMap<Integer, Drawable> iconCache = new HashMap<>();
     private final ArrayList<Entry> items = new ArrayList<>();
+    private final HashSet<String> selected = new HashSet<>();
+    private boolean selecting;
     private boolean pathMode;
     private float rowScale;
 
@@ -72,6 +75,57 @@ public final class FileAdapter extends BaseAdapter {
         return rowScale;
     }
 
+    // ------------------------------------------------------------------ 多选状态
+
+    /** 进入/退出多选模式，列表项显示勾选框。 */
+    public void setSelecting(boolean value) {
+        if (selecting == value) {
+            return;
+        }
+        selecting = value;
+        if (!value) {
+            selected.clear();
+        }
+        notifyDataSetChanged();
+    }
+
+    public boolean selecting() {
+        return selecting;
+    }
+
+    public void toggle(Entry entry) {
+        if (!selected.remove(entry.path)) {
+            selected.add(entry.path);
+        }
+        notifyDataSetChanged();
+    }
+
+    public void selectAll() {
+        for (Entry entry : items) {
+            selected.add(entry.path);
+        }
+        notifyDataSetChanged();
+    }
+
+    public void clearSelection() {
+        selected.clear();
+        notifyDataSetChanged();
+    }
+
+    public int selectedCount() {
+        return selected.size();
+    }
+
+    public List<Entry> selectedItems() {
+        ArrayList<Entry> result = new ArrayList<>();
+        for (Entry entry : items) {
+            if (selected.contains(entry.path)) {
+                result.add(entry);
+            }
+        }
+        return result;
+    }
+
     @Override
     public int getCount() {
         return items.size();
@@ -97,6 +151,7 @@ public final class FileAdapter extends BaseAdapter {
         if (view == null) {
             view = inflater.inflate(R.layout.item_file, parent, false);
             holder = new Holder();
+            holder.check = view.findViewById(R.id.check);
             holder.icon = view.findViewById(R.id.icon);
             holder.name = view.findViewById(R.id.name);
             holder.meta = view.findViewById(R.id.meta);
@@ -140,7 +195,20 @@ public final class FileAdapter extends BaseAdapter {
         int tint = tintFor(entry);
         holder.icon.setImageDrawable(iconFor(entry, tint));
         holder.icon.setBackground(containerBackground(tint));
-        holder.chevron.setVisibility(entry.dir ? View.VISIBLE : View.INVISIBLE);
+        if (selecting) {
+            holder.check.setVisibility(View.VISIBLE);
+            holder.chevron.setVisibility(View.INVISIBLE);
+            Integer state = selected.contains(entry.path) ? 1 : 0;
+            if (!state.equals(holder.check.getTag())) {
+                holder.check.setTag(state);
+                holder.check.setBackgroundResource(state == 1
+                        ? R.drawable.bg_check_on : R.drawable.bg_check_off);
+                holder.check.setText(state == 1 ? "✓" : "");
+            }
+        } else {
+            holder.check.setVisibility(View.GONE);
+            holder.chevron.setVisibility(entry.dir ? View.VISIBLE : View.INVISIBLE);
+        }
         return view;
     }
 
@@ -207,6 +275,7 @@ public final class FileAdapter extends BaseAdapter {
     }
 
     static final class Holder {
+        TextView check;
         ImageView icon;
         TextView name;
         TextView meta;

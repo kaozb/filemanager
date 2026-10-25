@@ -34,12 +34,14 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     private Toolbar toolbar;
     private CrumbBar crumb;
+    private SelectionBar selectionBar;
     private PanePager pager;
     private View dotFirst;
     private View dotSecond;
 
     private PaneController left;
     private PaneController right;
+    private PaneController selectionPane;
 
     // 悬浮设置面板内的视图（打开时绑定，关闭时置空）
     private TextView storageSummary;
@@ -73,12 +75,52 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             currentPane().showPaneMenu();
             return true;
         });
-        // 路径节之外的区域：点按切换数据源，长按弹面板菜单
-        toolbar.setOnClickListener(v -> onChooseSource(currentPane()));
-        toolbar.setOnLongClickListener(v -> {
-            currentPane().showPaneMenu();
-            return true;
+        selectionBar = findViewById(R.id.selectionBar);
+        selectionBar.setCallback(new SelectionBar.Callback() {
+            @Override
+            public void onSelectAll() {
+                if (selectionPane != null) {
+                    selectionPane.toggleSelectAll();
+                }
+            }
+
+            @Override
+            public void onCopy() {
+                if (selectionPane != null) {
+                    selectionPane.copySelected();
+                }
+            }
+
+            @Override
+            public void onMove() {
+                if (selectionPane != null) {
+                    selectionPane.moveSelected();
+                }
+            }
+
+            @Override
+            public void onZip() {
+                if (selectionPane != null) {
+                    selectionPane.zipSelected();
+                }
+            }
+
+            @Override
+            public void onDelete() {
+                if (selectionPane != null) {
+                    selectionPane.deleteSelected();
+                }
+            }
+
+            @Override
+            public void onClose() {
+                if (selectionPane != null) {
+                    selectionPane.exitSelection();
+                }
+            }
         });
+        // 路径节之外的区域：点按切换数据源，长按弹面板菜单
+        bindToolbarGestures();
 
         pager = findViewById(R.id.pager);
         dotFirst = findViewById(R.id.dotFirst);
@@ -87,8 +129,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             @Override
             public void onPageSettled(int settled) {
                 if (settled != page) {
-                    left.finishSelection();
-                    right.finishSelection();
+                    left.exitSelection();
+                    right.exitSelection();
                     page = settled;
                     updateToolbar();
                 }
@@ -145,6 +187,10 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     @Override
     public void onBackPressed() {
+        if (selectionPane != null) {
+            selectionPane.exitSelection();
+            return;
+        }
         if (page == 1) {
             showPage(0);
             return;
@@ -177,6 +223,43 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         if (pane == currentPane()) {
             updateToolbar();
         }
+    }
+
+    /** 路径节之外的区域：点按切换数据源，长按弹面板菜单。 */
+    private void bindToolbarGestures() {
+        toolbar.setOnClickListener(v -> onChooseSource(currentPane()));
+        toolbar.setOnLongClickListener(v -> {
+            currentPane().showPaneMenu();
+            return true;
+        });
+    }
+
+    /** 面板进入/退出多选时，顶栏在路径导航与操作栏之间切换。 */
+    @Override
+    public void onSelectionChanged(PaneController pane) {
+        if (pane.selectionActive()) {
+            selectionPane = pane;
+            crumb.setVisibility(View.GONE);
+            selectionBar.setVisibility(View.VISIBLE);
+            toolbar.setOnClickListener(null);
+            toolbar.setOnLongClickListener(null);
+            toolbar.getMenu().findItem(R.id.action_settings).setVisible(false);
+        } else if (selectionPane == pane) {
+            selectionPane = null;
+            selectionBar.setVisibility(View.GONE);
+            crumb.setVisibility(View.VISIBLE);
+            bindToolbarGestures();
+            toolbar.getMenu().findItem(R.id.action_settings).setVisible(true);
+        }
+        refreshSelectionBar();
+    }
+
+    private void refreshSelectionBar() {
+        if (selectionPane == null) {
+            return;
+        }
+        selectionBar.setCount(selectionPane.selectedCount());
+        selectionBar.setAllSelected(selectionPane.allSelected());
     }
 
     /** 指示点跟随拖动进度联动：两枚圆点同色，用透明度区分当前面板。 */

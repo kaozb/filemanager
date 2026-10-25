@@ -9,6 +9,20 @@
     android:paddingEnd="10dp"
     android:paddingBottom="11dp">
 
+    <TextView
+        android:id="@+id/check"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/bg_check_off"
+        android:contentDescription="@null"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:textColor="?attr/lumenOnAccent"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <ImageView
         android:id="@+id/icon"
         android:layout_width="44dp"
