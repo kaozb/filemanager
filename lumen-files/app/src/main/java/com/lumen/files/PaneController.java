@@ -3,7 +3,10 @@ package com.lumen.files;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Environment;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.AdapterView;
@@ -27,9 +30,9 @@ import java.util.List;
 
 /**
  * 首页两个滑动面板中的一栏：独立的数据源、路径与列表。
- * 本地卷与 WebDAV 都走统一的 Fs；面板本身不带头部，
- * 存储对象名称与当前目录显示在顶栏标题，由 Host 通过 onPaneChanged 更新。
- * 列表支持双指开合缩放行大小。
+ * 本地卷与 WebDAV 都走统一的 Fs；面板不带头部，顶栏通过 CrumbBar 显示
+ * 可点击的路径导航，由 Host 在 onPaneChanged 时刷新。
+ * 列表支持下拉刷新、双指开合缩放行大小、多选操作。
  */
 public final class PaneController {
 
@@ -49,6 +52,7 @@ public final class PaneController {
     private final int index;
     private final View root;
     private final ListView listView;
+    private final PullRefreshLayout refreshLayout;
     private final ProgressBar loadingView;
     private final View emptyView;
     private final TextView emptyText;
@@ -61,6 +65,7 @@ public final class PaneController {
     private int serverId = -1;
     private String rootPath;
     private String path;
+    private ActionMode actionMode;
 
     private boolean showHidden;
     private int sortMode;
@@ -78,6 +83,8 @@ public final class PaneController {
         accent = activity.color(R.attr.lumenAccent);
 
         listView = root.findViewById(R.id.paneList);
+        refreshLayout = root.findViewById(R.id.paneRefresh);
+        refreshLayout.setOnRefreshListener(() -> load(path));
         loadingView = root.findViewById(R.id.paneLoading);
         emptyView = root.findViewById(R.id.paneEmpty);
         emptyText = root.findViewById(R.id.paneEmptyText);
@@ -152,6 +159,26 @@ public final class PaneController {
         return root + " › " + relative.replace("/", " › ");
     }
 
+    /** 面包屑路径节：从存储根到当前目录，每节可点击跳转。 */
+    List<CrumbBar.Segment> crumbSegments() {
+        ArrayList<CrumbBar.Segment> segments = new ArrayList<>();
+        String rootLabel = fs.isLocal() ? StorageUtil.label(new File(rootPath)) : fs.label();
+        segments.add(new CrumbBar.Segment(rootLabel, rootPath));
+        String base = trimTrailing(rootPath);
+        String current = trimTrailing(path);
+        if (!current.equals(base) && !"/".equals(current)) {
+            String rest = current.startsWith(base) ? current.substring(base.length()) : current;
+            for (String part : rest.split("/")) {
+                if (part.isEmpty()) {
+                    continue;
+                }
+                segments.add(new CrumbBar.Segment(part,
+                        fs.child(segments.get(segments.size() - 1).path, part)));
+            }
+        }
+        return segments;
+    }
+
     boolean canGoUp() {
         String current = trimTrailing(path);
         return !current.equals(trimTrailing(rootPath)) && !"/".equals(current);
@@ -198,9 +225,10 @@ public final class PaneController {
         load(path);
     }
 
-    private void load(final String target) {
+    void load(final String target) {
         final int current = ++generation;
         final Fs source = fs;
+        finishSelection();
         loadingView.setVisibility(View.VISIBLE);
         emptyView.setVisibility(View.GONE);
         Bg.pool().execute(() -> {
@@ -217,6 +245,7 @@ public final class PaneController {
                 if (current != generation || activity.isFinishing()) {
                     return;
                 }
+                refreshLayout.setRefreshing(false);
                 loadingView.setVisibility(View.GONE);
                 path = target;
                 Prefs.setPanePath(activity, index, target);
@@ -280,6 +309,10 @@ public final class PaneController {
     }
 
     private void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (actionMode != null) {
+            toggleSelection(position);
+            return;
+        }
         Entry entry = adapter.getItem(position);
         if (entry.dir) {
             load(entry.path);
@@ -289,24 +322,29 @@ public final class PaneController {
     }
 
     private boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-        showItemMenu(adapter.getItem(position));
+        if (actionMode == null) {
+            showItemMenu(adapter.getItem(position), position);
+        } else {
+            listView.setItemChecked(position, true);
+            updateSelectionTitle();
+        }
         return true;
     }
 
-    private void showItemMenu(final Entry entry) {
-        final String[] options = {"打开", "重命名", "删除", "复制到另一侧", "详情"};
-        activity.showActionSheet(entry.name, options, 2, which -> {
-            String option = options[which];
-            if ("打开".equals(option)) {
-                openEntry(entry);
-            } else if ("重命名".equals(option)) {
+    /** 长按文件/文件夹弹出的居中菜单，选项保持简约。 */
+    private void showItemMenu(final Entry entry, final int position) {
+        final String[] options = {"多选", "重命名", "复制到另一侧", "详情", "删除"};
+        activity.showCenterMenu(entry.name, options, 4, which -> {
+            if (which == 0) {
+                enterSelection(position);
+            } else if (which == 1) {
                 renameDialog(entry);
-            } else if ("删除".equals(option)) {
-                deleteDialog(entry);
-            } else if ("复制到另一侧".equals(option)) {
-                copyToOther(entry);
-            } else {
+            } else if (which == 2) {
+                copyToOther(Collections.singletonList(entry));
+            } else if (which == 3) {
                 details(entry);
+            } else {
+                deleteDialog(entry);
             }
         });
     }
@@ -328,6 +366,161 @@ public final class PaneController {
                 host.onOpenSettings();
             }
         });
+    }
+
+    // ------------------------------------------------------------------ 多选
+
+    boolean selectionActive() {
+        return actionMode != null;
+    }
+
+    void finishSelection() {
+        if (actionMode != null) {
+            actionMode.finish();
+        }
+    }
+
+    private void enterSelection(int position) {
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        listView.setItemChecked(position, true);
+        actionMode = activity.startActionMode(new PaneSelectionCallback());
+        updateSelectionTitle();
+    }
+
+    private void toggleSelection(int position) {
+        listView.setItemChecked(position, !listView.isItemChecked(position));
+        if (actionMode == null) {
+            return;
+        }
+        if (selectedEntries().isEmpty()) {
+            actionMode.finish();
+        } else {
+            updateSelectionTitle();
+        }
+    }
+
+    private void updateSelectionTitle() {
+        if (actionMode != null) {
+            actionMode.setTitle(selectedEntries().size() + " 项");
+        }
+    }
+
+    private List<Entry> selectedEntries() {
+        ArrayList<Entry> selected = new ArrayList<>();
+        android.util.SparseBooleanArray checked = listView.getCheckedItemPositions();
+        if (checked != null) {
+            for (int i = 0; i < checked.size(); i++) {
+                if (!checked.valueAt(i)) {
+                    continue;
+                }
+                int position = checked.keyAt(i);
+                if (position >= 0 && position < adapter.getCount()) {
+                    selected.add(adapter.getItem(position));
+                }
+            }
+        }
+        return selected;
+    }
+
+    /** 面板多选模式：全选、复制到另一侧、删除。 */
+    private final class PaneSelectionCallback implements ActionMode.Callback {
+
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            mode.getMenuInflater().inflate(R.menu.menu_multi_pane, menu);
+            activity.tintMenu(menu);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            updateSelectionTitle();
+            return true;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            List<Entry> selected = selectedEntries();
+            if (selected.isEmpty()) {
+                mode.finish();
+                return true;
+            }
+            int id = item.getItemId();
+            if (id == R.id.action_select_all) {
+                int count = adapter.getCount();
+                boolean allSelected = selected.size() >= count;
+                for (int i = 0; i < count; i++) {
+                    listView.setItemChecked(i, !allSelected);
+                }
+                if (allSelected) {
+                    mode.finish();
+                } else {
+                    updateSelectionTitle();
+                }
+                return true;
+            }
+            if (id == R.id.action_copy) {
+                mode.finish();
+                copyToOther(selected);
+                return true;
+            }
+            if (id == R.id.action_delete) {
+                confirmDelete(selected);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            for (int i = 0; i < adapter.getCount(); i++) {
+                listView.setItemChecked(i, false);
+            }
+            listView.setChoiceMode(ListView.CHOICE_MODE_NONE);
+            actionMode = null;
+        }
+    }
+
+    private void copyToOther(final List<Entry> entries) {
+        final PaneController target = host.other(this);
+        if (target == null || target.fs() == null) {
+            return;
+        }
+        final Fs targetFs = target.fs();
+        final String targetDir = target.path();
+        if (targetFs.id().equals(fs.id())
+                && trimTrailing(targetDir).equals(trimTrailing(path))) {
+            Bg.toast(activity, "两栏在同一目录");
+            return;
+        }
+        Bg.run(activity, "正在复制…", () -> {
+            for (Entry entry : entries) {
+                FsUtil.copyTree(fs, entry.path, targetFs,
+                        targetFs.child(targetDir, entry.name));
+            }
+        }, () -> {
+            Bg.toast(activity, "已复制到另一侧");
+            target.reload();
+        });
+    }
+
+    private void confirmDelete(final List<Entry> entries) {
+        new AlertDialog.Builder(activity)
+                .setTitle("删除")
+                .setMessage("确定删除这 " + entries.size() + " 个项目吗？此操作不可撤销。")
+                .setNegativeButton("取消", null)
+                .setPositiveButton("删除", (dialog, which) -> {
+                    finishSelection();
+                    Bg.run(activity, "正在删除…", () -> {
+                        for (Entry entry : entries) {
+                            fs.delete(entry.path);
+                        }
+                    }, () -> {
+                        Bg.toast(activity, "已删除");
+                        reload();
+                    });
+                })
+                .show();
     }
 
     private void openFull() {
@@ -407,26 +600,6 @@ public final class PaneController {
                             reload();
                         }))
                 .show();
-    }
-
-    private void copyToOther(final Entry entry) {
-        final PaneController target = host.other(this);
-        if (target == null || target.fs() == null) {
-            return;
-        }
-        final Fs targetFs = target.fs();
-        final String targetDir = target.path();
-        if (targetFs.id().equals(fs.id())
-                && trimTrailing(targetDir).equals(trimTrailing(path))) {
-            Bg.toast(activity, "两栏在同一目录");
-            return;
-        }
-        final String destination = targetFs.child(targetDir, entry.name);
-        Bg.run(activity, "正在复制…", () -> FsUtil.copyTree(fs, entry.path, targetFs, destination),
-                () -> {
-                    Bg.toast(activity, "已复制到另一侧");
-                    target.reload();
-                });
     }
 
     private void details(Entry entry) {

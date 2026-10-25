@@ -56,7 +56,9 @@ public final class BrowserActivity extends BaseActivity {
     private static final int REQ_PICK = 41;
 
     private Toolbar toolbar;
+    private CrumbBar crumb;
     private ListView listView;
+    private PullRefreshLayout refreshLayout;
     private FileAdapter adapter;
     private View loadingView;
     private View emptyView;
@@ -114,17 +116,16 @@ public final class BrowserActivity extends BaseActivity {
 
         toolbar = findViewById(R.id.toolbar);
         styleToolbar(toolbar);
-        toolbar.setNavigationIcon(R.drawable.ic_back);
-        Drawable navigation = toolbar.getNavigationIcon();
-        if (navigation != null) {
-            navigation.mutate().setTint(textColor);
-        }
-        toolbar.setNavigationOnClickListener(v -> goUp());
+        toolbar.setTitle(null);
         toolbar.inflateMenu(R.menu.menu_browser);
         tintMenu(toolbar.getMenu());
         toolbar.setOnMenuItemClickListener(this::onMenuSelected);
 
+        crumb = findViewById(R.id.crumb);
+
         listView = findViewById(R.id.list);
+        refreshLayout = findViewById(R.id.refresh);
+        refreshLayout.setOnRefreshListener(() -> load(path, true));
         loadingView = findViewById(R.id.loading);
         emptyView = findViewById(R.id.empty);
         emptyText = emptyView.findViewById(R.id.emptyText);
@@ -152,7 +153,7 @@ public final class BrowserActivity extends BaseActivity {
         });
         listView.setOnItemLongClickListener((parent, view, position, id) -> {
             if (actionMode == null) {
-                enterSelection(position);
+                showItemMenu(adapter.getItem(position), position);
             } else {
                 listView.setItemChecked(position, true);
                 updateSelectionTitle();
@@ -202,7 +203,15 @@ public final class BrowserActivity extends BaseActivity {
     }
 
     private void load(final String target) {
+        load(target, false);
+    }
+
+    /** keepPosition=true 时刷新当前目录不回滚到顶部。 */
+    private void load(final String target, final boolean keepPosition) {
         final int generation = ++loadGeneration;
+        if (actionMode != null) {
+            actionMode.finish();
+        }
         loadingView.setVisibility(View.VISIBLE);
         emptyView.setVisibility(View.GONE);
         Bg.pool().execute(() -> {
@@ -219,6 +228,7 @@ public final class BrowserActivity extends BaseActivity {
                 if (generation != loadGeneration || isFinishing()) {
                     return;
                 }
+                refreshLayout.setRefreshing(false);
                 loadingView.setVisibility(View.GONE);
                 path = target;
                 all.clear();
@@ -236,7 +246,7 @@ public final class BrowserActivity extends BaseActivity {
                 }
                 applySort();
                 updateChrome();
-                if (adapter.getCount() > 0) {
+                if (!keepPosition && adapter.getCount() > 0) {
                     listView.setSelection(0);
                 }
             });
@@ -285,10 +295,31 @@ public final class BrowserActivity extends BaseActivity {
     }
 
     private void updateChrome() {
-        toolbar.setTitle(folderName());
-        toolbar.setSubtitle(prettyPath());
+        toolbar.setTitle(null);
+        toolbar.setSubtitle(null);
+        crumb.setSegments(crumbSegments(), target -> load(target));
         updatePasteBar();
         updateMenuState();
+    }
+
+    /** 从存储根到当前目录的路径节，每节可点击跳转。 */
+    private List<CrumbBar.Segment> crumbSegments() {
+        ArrayList<CrumbBar.Segment> segments = new ArrayList<>();
+        String base = trimTrailing(startRoot);
+        String rootLabel = fs.isLocal() ? StorageUtil.label(new File(startRoot)) : fs.label();
+        segments.add(new CrumbBar.Segment(rootLabel, startRoot));
+        String current = trimTrailing(path);
+        if (!current.equals(base)) {
+            String rest = current.startsWith(base) ? current.substring(base.length()) : current;
+            for (String part : rest.split("/")) {
+                if (part.isEmpty()) {
+                    continue;
+                }
+                segments.add(new CrumbBar.Segment(part,
+                        fs.child(segments.get(segments.size() - 1).path, part)));
+            }
+        }
+        return segments;
     }
 
     private String folderName() {
@@ -301,14 +332,6 @@ public final class BrowserActivity extends BaseActivity {
         String value = trimTrailing(path);
         int slash = value.lastIndexOf('/');
         return slash >= 0 ? value.substring(slash + 1) : value;
-    }
-
-    private String prettyPath() {
-        String value = trimTrailing(path);
-        if (value.isEmpty() || "/".equals(value)) {
-            return fs.isLocal() ? "/" : fs.label();
-        }
-        return fs.isLocal() ? value : fs.label() + value;
     }
 
     private void updatePasteBar() {
@@ -366,7 +389,7 @@ public final class BrowserActivity extends BaseActivity {
             return true;
         }
         if (id == R.id.action_refresh) {
-            load(path);
+            load(path, true);
             return true;
         }
         if (id == R.id.action_import) {
@@ -558,6 +581,28 @@ public final class BrowserActivity extends BaseActivity {
 
     // ------------------------------------------------------------------ 选择模式
 
+    /** 长按文件/文件夹弹出的居中菜单，选项保持简约。 */
+    private void showItemMenu(final Entry entry, final int position) {
+        final String[] options = {"多选", "重命名", "复制", "剪切", "删除"};
+        showCenterMenu(entry.name, options, 4, which -> {
+            if (which == 0) {
+                enterSelection(position);
+            } else if (which == 1) {
+                rename(entry);
+            } else if (which == 2) {
+                Clipboard.set(fs, Collections.singletonList(entry), false);
+                updatePasteBar();
+                Bg.toast(this, "已复制 1 项");
+            } else if (which == 3) {
+                Clipboard.set(fs, Collections.singletonList(entry), true);
+                updatePasteBar();
+                Bg.toast(this, "已剪切 1 项");
+            } else {
+                confirmDelete(Collections.singletonList(entry));
+            }
+        });
+    }
+
     private void enterSelection(int position) {
         listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         listView.setItemChecked(position, true);
@@ -651,6 +696,19 @@ public final class BrowserActivity extends BaseActivity {
                 return false;
             }
             int id = item.getItemId();
+            if (id == R.id.action_select_all) {
+                int count = adapter.getCount();
+                boolean allSelected = selectedEntries().size() >= count;
+                for (int i = 0; i < count; i++) {
+                    listView.setItemChecked(i, !allSelected);
+                }
+                if (allSelected) {
+                    mode.finish();
+                } else {
+                    updateSelectionTitle();
+                }
+                return true;
+            }
             if (id == R.id.action_copy) {
                 Clipboard.set(fs, selected, false);
                 mode.finish();

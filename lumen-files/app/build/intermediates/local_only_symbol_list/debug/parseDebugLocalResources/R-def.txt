@@ -1,9 +1,7 @@
 R_DEF: Internal format may change without notice
 local
-anim page_in_left
-anim page_in_right
-anim page_out_left
-anim page_out_right
+anim menu_in
+anim menu_out
 anim sheet_in
 anim sheet_out
 attr lumenAccent
@@ -63,6 +61,7 @@ drawable bg_chip
 drawable bg_dialog
 drawable bg_dialog_dark
 drawable bg_dot
+drawable bg_dot_accent
 drawable bg_fab
 drawable bg_grip
 drawable bg_hero
@@ -108,7 +107,6 @@ drawable ic_storage
 drawable ic_text
 drawable ic_theme
 drawable ic_unzip
-drawable ic_up
 drawable ic_upload
 drawable ic_video
 drawable sel_item
@@ -136,26 +134,27 @@ id back
 id bar
 id chevron
 id clear
+id crumb
 id dotFirst
 id dotSecond
 id empty
 id emptyText
 id fab
-id flipper
 id grantBtn
 id hint
 id icon
 id input
-id label
 id list
 id loading
 id meta
 id name
+id pager
 id paneEmpty
 id paneEmptyText
 id paneLeft
 id paneList
 id paneLoading
+id paneRefresh
 id paneRight
 id pass
 id pasteBar
@@ -166,7 +165,7 @@ id pasteText
 id permissionCard
 id prefDark
 id prefHidden
-id quickGrid
+id refresh
 id rowSizeRow
 id rowSizeValue
 id serversBox
@@ -188,12 +187,12 @@ layout dialog_input
 layout dialog_server
 layout item_file
 layout item_location
-layout item_quick
 layout pane_file
 layout sheet_settings
 menu menu_browser
 menu menu_locations
 menu menu_multi
+menu menu_multi_pane
 mipmap ic_launcher
 string app_name
 string menu_copy
@@ -223,6 +222,8 @@ style AppDialog.Dark
 style AppDialog.Light
 style AppTheme
 style AppTheme.Dark
+style CenterMenuAnim
+style CenterMenuDialog
 style DialogTitle
 style LumenSwitch
 style SectionTitle

@@ -92,6 +92,22 @@
         <item name="android:windowExitAnimation">@anim/sheet_out</item>
     </style>
 
+    <!-- 居中弹出菜单（长按文件/文件夹） -->
+    <style name="CenterMenuDialog" parent="@android:style/Theme.Material.Dialog">
+        <item name="android:windowFrame">@null</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@style/CenterMenuAnim</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.4</item>
+    </style>
+
+    <style name="CenterMenuAnim">
+        <item name="android:windowEnterAnimation">@anim/menu_in</item>
+        <item name="android:windowExitAnimation">@anim/menu_out</item>
+    </style>
+
     <style name="ToolbarTitle">
         <item name="android:textSize">17sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>

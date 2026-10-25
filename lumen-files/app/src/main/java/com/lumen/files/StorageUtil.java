@@ -124,18 +124,6 @@ public final class StorageUtil {
         }
     }
 
-    public static String[][] quickShortcuts() {
-        File base = Environment.getExternalStorageDirectory();
-        return new String[][]{
-                {"下载", new File(base, "Download").getAbsolutePath()},
-                {"图片", new File(base, "Pictures").getAbsolutePath()},
-                {"相机", new File(base, "DCIM").getAbsolutePath()},
-                {"音乐", new File(base, "Music").getAbsolutePath()},
-                {"视频", new File(base, "Movies").getAbsolutePath()},
-                {"文档", new File(base, "Documents").getAbsolutePath()}
-        };
-    }
-
     private static boolean same(File a, File b) {
         if (a == null || b == null) {
             return false;

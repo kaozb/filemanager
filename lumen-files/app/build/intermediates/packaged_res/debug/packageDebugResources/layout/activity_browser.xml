@@ -14,26 +14,41 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:background="?attr/lumenSurface" />
+            android:background="?attr/lumenSurface">
+
+            <com.lumen.files.CrumbBar
+                android:id="@+id/crumb"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="48dp" />
+
+        </android.widget.Toolbar>
 
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <ListView
-                android:id="@+id/list"
+            <com.lumen.files.PullRefreshLayout
+                android:id="@+id/refresh"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:divider="@null"
-                android:dividerHeight="0dp"
-                android:listSelector="@drawable/sel_item"
-                android:paddingStart="10dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="10dp"
-                android:paddingBottom="112dp"
-                android:scrollbars="none" />
+                android:layout_height="match_parent">
+
+                <ListView
+                    android:id="@+id/list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:divider="@null"
+                    android:dividerHeight="0dp"
+                    android:listSelector="@drawable/sel_item"
+                    android:paddingStart="10dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="112dp"
+                    android:scrollbars="none" />
+
+            </com.lumen.files.PullRefreshLayout>
 
             <ProgressBar
                 android:id="@+id/loading"

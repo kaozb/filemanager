@@ -12,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toolbar;
@@ -141,6 +142,68 @@ public abstract class BaseActivity extends Activity {
             window.setLayout(LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
             window.setGravity(Gravity.BOTTOM);
+        }
+        dialog.show();
+    }
+
+    /**
+     * 居中弹出菜单：长按文件/文件夹时从屏幕中间直接出现，
+     * 视觉与底部操作面板、对话框保持同一主题（配色、圆角、警示色）。
+     */
+    protected void showCenterMenu(String title, String[] options, int dangerIndex,
+                                  final SheetPick pick) {
+        final Dialog dialog = new Dialog(this, R.style.CenterMenuDialog);
+
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setBackgroundResource(Prefs.dark(this)
+                ? R.drawable.bg_dialog_dark : R.drawable.bg_dialog);
+        box.setPadding(dp(7), dp(8), dp(7), dp(8));
+
+        if (title != null && !title.isEmpty()) {
+            TextView caption = new TextView(this);
+            caption.setText(title);
+            caption.setTextSize(15);
+            caption.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+            caption.setTextColor(secondaryColor);
+            caption.setSingleLine(true);
+            caption.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+            LinearLayout.LayoutParams captionParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            captionParams.setMargins(dp(12), dp(4), dp(12), dp(4));
+            caption.setLayoutParams(captionParams);
+            box.addView(caption);
+        }
+
+        int danger = color(R.attr.lumenDanger);
+        TypedValue feedback = new TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, feedback, true);
+        for (int i = 0; i < options.length; i++) {
+            TextView row = new TextView(this);
+            row.setText(options[i]);
+            row.setTextSize(15);
+            row.setTextColor(i == dangerIndex ? danger : textColor);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(18), 0, dp(18), 0);
+            row.setBackgroundResource(feedback.resourceId);
+            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(46));
+            row.setLayoutParams(rowParams);
+            final int index = i;
+            row.setOnClickListener(v -> {
+                dialog.dismiss();
+                pick.onPick(index);
+            });
+            box.addView(row);
+        }
+
+        dialog.setContentView(box);
+        Window window = dialog.getWindow();
+        if (window != null) {
+            int width = Math.min(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.8f), dp(290));
+            window.setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT);
+            window.setGravity(Gravity.CENTER);
         }
         dialog.show();
     }
