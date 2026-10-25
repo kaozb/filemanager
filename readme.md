@@ -123,6 +123,6 @@ gradle assembleRelease
    也可临时用环境变量：`GRADLE_OPTS="-Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=18080 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=18080" gradle assembleDebug`。
    手工下载 SDK zip（见上文安装步骤）时 curl 会自动读取 `http_proxy`/`https_proxy` 环境变量。
 2. **签名一致性**：覆盖安装必须使用同一密钥库 `keystore/mibo.jks`（别名 `mibo`），更换签名会导致安装失败（需先卸载）。注意：与旧版 `build/lumen.jks` 签名不兼容，从旧版升级需先卸载。
-3. **首启权限**：targetSdk 34 下存储权限需动态申请，旧版荣耀/鸿蒙设备有专门的授权引导分支，改动 `StorageUtil` 时注意回归。
+3. **首启权限**：targetSdk 34 下存储权限需动态申请（`MANAGE_EXTERNAL_STORAGE` 跳转系统设置页），改动 `StorageUtil` 时注意回归。
 4. **无第三方依赖**：刻意不引入 AndroidX/Kotlin，新增功能请使用平台 API，勿随手添加依赖。
 5. **浅克隆**：如本地历史被裁剪（`rev-list --count main` 偏小），先 `git fetch origin main --depth=50` 再操作。
