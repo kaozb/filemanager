@@ -1,0 +1,52 @@
+name: Release APK
+
+# push 到 main 分支 → 打签名 APK → 按当前时间打 tag → 创建 Release 并上传 APK
+# tag 格式：V年.月.日.时.分（两位年，北京时间），如 2026-11-26 11:20 → V26.11.26.11.20
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Compute tag name
+        id: tag
+        run: echo "name=V$(date +%y.%m.%d.%H.%M)" >> "$GITHUB_OUTPUT"
+
+      - name: Build, align and sign APK
+        env:
+          # versionCode 以仓库里的 version.properties 为基数，随流水线运行次数递增
+          VERSION_CODE: ${{ github.run_number }}
+        run: ./lumen-files/package.sh
+
+      - name: Create Release and upload APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.tag.outputs.name }}
+        run: |
+          gh release create "$TAG" "lumen-files/LumenFiles.apk" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes "自动构建 commit ${{ github.sha }} （北京时间 $(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M')）"
