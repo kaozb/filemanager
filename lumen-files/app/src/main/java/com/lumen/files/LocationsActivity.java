@@ -642,40 +642,30 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
                         client.list("/", 0);
                     }, () -> {
                         List<Server> servers = Prefs.servers(LocationsActivity.this);
-                        Server saved;
                         if (editing == null) {
                             int nextId = 1;
                             for (Server server : servers) {
                                 nextId = Math.max(nextId, server.id + 1);
                             }
-                            saved = new Server(nextId, finalName, finalAddress,
-                                    finalUser, finalPass);
-                            servers.add(saved);
+                            servers.add(new Server(nextId, finalName, finalAddress,
+                                    finalUser, finalPass));
                         } else {
-                            // Prefs.servers() 每次都是新解析的对象，必须替换列表里同 id 的那一项
-                            saved = null;
-                            for (int i = 0; i < servers.size(); i++) {
-                                if (servers.get(i).id == editing.id) {
-                                    saved = new Server(editing.id, finalName, finalAddress,
-                                            finalUser, finalPass);
-                                    servers.set(i, saved);
-                                    break;
-                                }
-                            }
-                            if (saved == null) {
-                                Bg.toast(LocationsActivity.this, "该服务器已被删除");
-                                return;
-                            }
+                            editing.name = finalName;
+                            editing.url = finalAddress;
+                            editing.user = finalUser;
+                            editing.pass = finalPass;
                         }
                         Prefs.saveServers(LocationsActivity.this, servers);
                         if (dialog.isShowing()) {
                             dialog.dismiss();
                         }
-                        if (left.serverId() == saved.id) {
-                            left.setServer(saved);
-                        }
-                        if (right.serverId() == saved.id) {
-                            right.setServer(saved);
+                        if (editing != null) {
+                            if (left.serverId() == editing.id) {
+                                left.setServer(editing);
+                            }
+                            if (right.serverId() == editing.id) {
+                                right.setServer(editing);
+                            }
                         }
                         renderSettings();
                         Bg.toast(LocationsActivity.this, "已保存");
