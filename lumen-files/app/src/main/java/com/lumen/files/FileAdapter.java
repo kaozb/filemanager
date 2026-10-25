@@ -64,6 +64,9 @@ public final class FileAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int position) {
+        if (position < 0 || position >= items.size()) {
+            return position;
+        }
         return items.get(position).path.hashCode();
     }
 

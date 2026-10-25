@@ -232,7 +232,9 @@ public final class BrowserActivity extends BaseActivity {
                 }
                 applySort();
                 updateChrome();
-                listView.setSelection(0);
+                if (adapter.getCount() > 0) {
+                    listView.setSelection(0);
+                }
             });
         });
     }

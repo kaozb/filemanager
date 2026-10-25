@@ -128,6 +128,7 @@ public final class LocationsActivity extends BaseActivity {
                     StorageUtil.label(root), subtitle, percent);
             final String path = root.getAbsolutePath();
             card.setOnClickListener(v -> openLocal(path));
+            rootsBox.addView(card);
         }
     }
 
@@ -174,12 +175,14 @@ public final class LocationsActivity extends BaseActivity {
                 showServerMenu(server);
                 return true;
             });
+            serversBox.addView(card);
         }
         View add = addCard(R.drawable.ic_add, accent,
                 "添加 WebDAV 服务器", "支持 HTTPS 与 Basic 认证", -1);
         add.setOnClickListener(v -> showServerDialog(null));
-        TextView chevron = add.findViewById(R.id.chevron);
+        ImageView chevron = add.findViewById(R.id.chevron);
         chevron.setVisibility(View.INVISIBLE);
+        serversBox.addView(add);
     }
 
     private View addCard(int iconResource, int tintColor, String title,
