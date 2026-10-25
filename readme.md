@@ -28,6 +28,22 @@ yes | sdkmanager --licenses
 sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 ```
 
+## 签名密钥（后续打包固定使用此密钥）
+
+| 项 | 值 |
+|---|---|
+| 密钥库文件 | `lumen-files/keystore/mibo.jks` |
+| 格式 | JKS |
+| 别名（alias） | `mibo` |
+| storepass | `mibo` |
+| keypass | `mibo` |
+| 算法 | SHA256withRSA |
+| 证书 SHA-256 | `52d39c230177ddb28a5d4f896e33de7581e9da0cd357a942a979ea0a5599753d` |
+| 证书 SHA-1 | `767b9c1a37580b2e0decbc7eedd93143ab08940d` |
+| 有效期 | 2026-10-25 至 2051-10-19 |
+
+> 该密钥为项目唯一正式签名密钥，所有对外发布的 APK 一律用它签名；`build/lumen.jks` 为旧调试密钥，已弃用（两者签名不兼容，互相覆盖安装需先卸载）。
+
 ## 打包命令
 
 ```bash
