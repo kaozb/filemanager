@@ -111,7 +111,6 @@ drawable ic_video
 drawable sel_item
 drawable toggle_thumb
 drawable toggle_track
-id action_about
 id action_copy
 id action_cut
 id action_delete
@@ -133,7 +132,6 @@ id addServerBtn
 id back
 id bar
 id chevron
-id chipIcon
 id clear
 id dotFirst
 id dotSecond
@@ -150,16 +148,12 @@ id list
 id loading
 id meta
 id name
-id paneChip
 id paneEmpty
 id paneEmptyText
 id paneLeft
 id paneList
 id paneLoading
-id panePath
 id paneRight
-id paneSource
-id paneUp
 id pass
 id pasteBar
 id pasteBtn
@@ -199,7 +193,6 @@ menu menu_locations
 menu menu_multi
 mipmap ic_launcher
 string app_name
-string menu_about
 string menu_copy
 string menu_cut
 string menu_delete

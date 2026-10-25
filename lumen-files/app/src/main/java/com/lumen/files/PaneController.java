@@ -8,8 +8,6 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
@@ -29,9 +27,10 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * 首页左右两栏中的一栏：独立的数据源、路径与列表。
- * 本地卷与 WebDAV 都走统一的 Fs，切换数据源不影响另一栏。
- * 顶部 chip：点击切换数据源，长按弹出面板菜单；列表支持双指开合缩放行大小。
+ * 首页两个滑动面板中的一栏：独立的数据源、路径与列表。
+ * 本地卷与 WebDAV 都走统一的 Fs；面板本身不带头部，
+ * 存储对象名称与当前目录显示在顶栏标题，由 Host 通过 onPaneChanged 更新。
+ * 列表支持双指开合缩放行大小。
  */
 public final class PaneController {
 
@@ -40,6 +39,9 @@ public final class PaneController {
 
         void onOpenSettings();
 
+        /** 面板导航状态变化（进入/返回目录、切换数据源），Host 据此刷新顶栏。 */
+        void onPaneChanged(PaneController pane);
+
         PaneController other(PaneController pane);
     }
 
@@ -47,9 +49,6 @@ public final class PaneController {
     private final Host host;
     private final int index;
     private final View root;
-    private final TextView sourceLabel;
-    private final TextView pathLabel;
-    private final ImageView chipIcon;
     private final ListView listView;
     private final ProgressBar loadingView;
     private final View emptyView;
@@ -57,7 +56,6 @@ public final class PaneController {
     private final FileAdapter adapter;
     private final ArrayList<Entry> all = new ArrayList<>();
     private final int accent;
-    private final int accent2;
     private final ScaleGestureDetector scaleDetector;
 
     private Fs fs;
@@ -79,29 +77,16 @@ public final class PaneController {
         ((android.view.ViewGroup) container).addView(root);
 
         accent = activity.color(R.attr.lumenAccent);
-        accent2 = activity.color(R.attr.lumenAccent2);
 
-        View chip = root.findViewById(R.id.paneChip);
-        sourceLabel = root.findViewById(R.id.paneSource);
-        chipIcon = root.findViewById(R.id.chipIcon);
-        pathLabel = root.findViewById(R.id.panePath);
         listView = root.findViewById(R.id.paneList);
         loadingView = root.findViewById(R.id.paneLoading);
         emptyView = root.findViewById(R.id.paneEmpty);
         emptyText = root.findViewById(R.id.paneEmptyText);
-        ImageButton up = root.findViewById(R.id.paneUp);
 
         adapter = new FileAdapter(activity);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(this::onItemClick);
         listView.setOnItemLongClickListener(this::onItemLongClick);
-
-        chip.setOnClickListener(v -> host.onChooseSource(this));
-        chip.setOnLongClickListener(v -> {
-            showPaneMenu(chip);
-            return true;
-        });
-        up.setOnClickListener(v -> goUp());
 
         // 双指开合：实时缩放行，松手后持久化到全局偏好
         scaleDetector = new ScaleGestureDetector(activity, new ScaleListener());
@@ -150,6 +135,29 @@ public final class PaneController {
 
     int serverId() {
         return serverId;
+    }
+
+    /** 顶栏标题：根目录显示存储对象名称，子目录显示当前目录名。 */
+    String title() {
+        String current = trimTrailing(path);
+        if (current.equals(trimTrailing(rootPath)) || "/".equals(current)) {
+            return fs.isLocal() ? StorageUtil.label(new File(rootPath)) : fs.label();
+        }
+        int slash = current.lastIndexOf('/');
+        return slash < 0 ? current : current.substring(slash + 1);
+    }
+
+    boolean canGoUp() {
+        String current = trimTrailing(path);
+        return !current.equals(trimTrailing(rootPath)) && !"/".equals(current);
+    }
+
+    void goUp() {
+        if (!canGoUp()) {
+            Bg.toast(activity, "已经到根目录了");
+            return;
+        }
+        load(fs.parent(path));
     }
 
     void applyPrefs() {
@@ -218,7 +226,7 @@ public final class PaneController {
                     }
                     applySort();
                 }
-                updateChrome();
+                host.onPaneChanged(this);
             });
         });
     }
@@ -266,23 +274,6 @@ public final class PaneController {
         };
     }
 
-    private void updateChrome() {
-        boolean local = fs.isLocal();
-        sourceLabel.setText(local ? StorageUtil.label(new File(rootPath)) : fs.label());
-        chipIcon.setImageResource(local ? R.drawable.ic_folder : R.drawable.ic_cloud);
-        chipIcon.setColorFilter(local ? accent : accent2);
-        pathLabel.setText(local ? trimTrailing(path) : path);
-    }
-
-    private void goUp() {
-        String current = trimTrailing(path);
-        if (current.equals(trimTrailing(rootPath)) || "/".equals(current)) {
-            Bg.toast(activity, "已经到根目录了");
-            return;
-        }
-        load(fs.parent(path));
-    }
-
     private void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Entry entry = adapter.getItem(position);
         if (entry.dir) {
@@ -318,7 +309,8 @@ public final class PaneController {
                 .show();
     }
 
-    private void showPaneMenu(View anchor) {
+    /** 面板菜单：宿主在长按顶栏标题时弹出。 */
+    void showPaneMenu(View anchor) {
         PopupMenu menu = new PopupMenu(activity, anchor);
         menu.getMenu().add("切换数据源");
         menu.getMenu().add("新建文件夹");

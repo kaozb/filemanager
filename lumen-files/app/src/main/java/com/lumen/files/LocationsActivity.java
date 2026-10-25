@@ -67,21 +67,22 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         setContentView(R.layout.activity_locations);
 
         toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("超级文件");
         styleToolbar(toolbar);
         toolbar.inflateMenu(R.menu.menu_locations);
         tintMenu(toolbar.getMenu());
         toolbar.setOnMenuItemClickListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.action_settings) {
+            if (item.getItemId() == R.id.action_settings) {
                 showSettingsSheet();
                 return true;
             }
-            if (id == R.id.action_about) {
-                showAbout();
-                return true;
-            }
             return false;
+        });
+        // 左上角：点标题切换数据源，长按弹面板菜单；左侧箭头返回上一级
+        toolbar.setNavigationOnClickListener(v -> currentPane().goUp());
+        toolbar.setOnClickListener(v -> onChooseSource(currentPane()));
+        toolbar.setOnLongClickListener(v -> {
+            currentPane().showPaneMenu(toolbar);
+            return true;
         });
 
         flipper = findViewById(R.id.flipper);
@@ -96,6 +97,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             flipper.setDisplayedChild(1);
         }
         updateDots();
+        updateToolbar();
 
         firstResume = true;
         left.restore();
@@ -134,6 +136,10 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     public void onBackPressed() {
         if (page == 1) {
             showPage(0);
+            return;
+        }
+        if (currentPane().canGoUp()) {
+            currentPane().goUp();
             return;
         }
         super.onBackPressed();
@@ -199,11 +205,36 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         }
         page = target;
         updateDots();
+        updateToolbar();
     }
 
     private void updateDots() {
         paintDot(dotFirst, page == 0);
         paintDot(dotSecond, page == 1);
+    }
+
+    private PaneController currentPane() {
+        return page == 0 ? left : right;
+    }
+
+    /** 顶栏跟随当前面板：标题 = 存储对象/目录名，左侧箭头 = 上一级。 */
+    private void updateToolbar() {
+        PaneController pane = currentPane();
+        toolbar.setTitle(pane.title());
+        if (pane.canGoUp()) {
+            Drawable icon = getDrawable(R.drawable.ic_up).mutate();
+            icon.setTint(secondaryColor);
+            toolbar.setNavigationIcon(icon);
+        } else {
+            toolbar.setNavigationIcon(null);
+        }
+    }
+
+    @Override
+    public void onPaneChanged(PaneController pane) {
+        if (pane == currentPane()) {
+            updateToolbar();
+        }
     }
 
     private void paintDot(View dot, boolean active) {
@@ -684,17 +715,5 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
                     });
                 }));
         dialog.show();
-    }
-
-    private void showAbout() {
-        new AlertDialog.Builder(this)
-                .setTitle("超级文件")
-                .setMessage("版本 1.0\n\n"
-                        + "纯 Java · 零第三方依赖 · 双面板左右滑动\n"
-                        + "本地全盘管理 + WebDAV 客户端\n\n"
-                        + "特性：双面板独立数据源、跨面板复制、多选复制/剪切/粘贴、"
-                        + "搜索、压缩解压、图片与文本预览、双指缩放列表行、明暗主题。")
-                .setPositiveButton("知道了", null)
-                .show();
     }
 }
