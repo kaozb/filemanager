@@ -49,6 +49,10 @@ sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 ```bash
 cd lumen-files
 
+# 0. 清理缓存（必须，避免增量构建残留把旧 dex/资源打进包体）
+gradle clean
+rm -rf app/build build .gradle
+
 # 1. Debug 构建（输出 app/build/outputs/apk/debug/app-debug.apk）
 gradle assembleDebug
 
@@ -60,6 +64,20 @@ apksigner sign --ks keystore/mibo.jks --ks-key-alias mibo --ks-pass pass:mibo --
 
 # 4. 验证
 apksigner verify --print-certs LumenFiles.apk
+
+# 5. 清理中间文件
+rm -f aligned.apk LumenFiles.apk.idsig
+```
+
+一条命令完成全流程（清理 + 构建 + 对齐 + 签名 + 验证）：
+
+```bash
+cd lumen-files && gradle clean && rm -rf app/build build .gradle \
+  && gradle assembleDebug \
+  && zipalign -f 4 app/build/outputs/apk/debug/app-debug.apk aligned.apk \
+  && apksigner sign --ks keystore/mibo.jks --ks-key-alias mibo --ks-pass pass:mibo --key-pass pass:mibo --out LumenFiles.apk aligned.apk \
+  && apksigner verify LumenFiles.apk \
+  && rm -f aligned.apk LumenFiles.apk.idsig
 ```
 
 Release 构建（已配置混淆 + 资源收缩）：
