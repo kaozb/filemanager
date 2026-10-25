@@ -59,6 +59,7 @@ drawable bg_card
 drawable bg_chip
 drawable bg_dialog
 drawable bg_dialog_dark
+drawable bg_dot
 drawable bg_fab
 drawable bg_grip
 drawable bg_hero
@@ -96,6 +97,7 @@ drawable ic_refresh
 drawable ic_search
 drawable ic_select_all
 drawable ic_server
+drawable ic_settings
 drawable ic_share
 drawable ic_shield
 drawable ic_sort
@@ -133,9 +135,12 @@ id bar
 id chevron
 id chipIcon
 id clear
+id dotFirst
+id dotSecond
 id empty
 id emptyText
 id fab
+id flipper
 id grantBtn
 id hint
 id icon

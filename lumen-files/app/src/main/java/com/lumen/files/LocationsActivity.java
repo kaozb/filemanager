@@ -3,12 +3,15 @@ package com.lumen.files;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.animation.AnimationUtils;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.ImageView;
@@ -17,6 +20,7 @@ import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toolbar;
+import android.widget.ViewFlipper;
 
 import com.lumen.files.webdav.WebDavClient;
 
@@ -28,9 +32,15 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 首页：双栏文件浏览（本地 / WebDAV 独立切换），设置与服务器管理收进底部悬浮面板。
+ * 首页：两个文件面板（本地 / WebDAV 独立切换），左右滑动切换面板；
+ * 设置与服务器管理收进底部悬浮面板，入口为顶栏齿轮图标。
  */
 public final class LocationsActivity extends BaseActivity implements PaneController.Host {
+
+    private Toolbar toolbar;
+    private ViewFlipper flipper;
+    private View dotFirst;
+    private View dotSecond;
 
     private PaneController left;
     private PaneController right;
@@ -44,15 +54,20 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     private TextView rowSizeValue;
     private TextView sortValue;
 
+    private int page;
     private boolean firstResume;
+    private float downX;
+    private float downY;
+    private boolean dragging;
+    private boolean multiTouch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_locations);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("流光文件");
+        toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("超级文件");
         styleToolbar(toolbar);
         toolbar.inflateMenu(R.menu.menu_locations);
         tintMenu(toolbar.getMenu());
@@ -69,8 +84,18 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             return false;
         });
 
+        flipper = findViewById(R.id.flipper);
+        dotFirst = findViewById(R.id.dotFirst);
+        dotSecond = findViewById(R.id.dotSecond);
+
         left = new PaneController(this, this, 0, findViewById(R.id.paneLeft));
         right = new PaneController(this, this, 1, findViewById(R.id.paneRight));
+
+        page = savedInstanceState == null ? 0 : savedInstanceState.getInt("page", 0);
+        if (page == 1) {
+            flipper.setDisplayedChild(1);
+        }
+        updateDots();
 
         firstResume = true;
         left.restore();
@@ -91,6 +116,12 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("page", page);
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -101,7 +132,85 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     @Override
     public void onBackPressed() {
+        if (page == 1) {
+            showPage(0);
+            return;
+        }
         super.onBackPressed();
+    }
+
+    // ------------------------------------------------------------------ 左右滑动切面板
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                downX = event.getX();
+                downY = event.getY();
+                dragging = false;
+                multiTouch = false;
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:
+                // 双指（捏合缩放行高）不触发翻页
+                multiTouch = true;
+                dragging = false;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                if (!multiTouch) {
+                    float dx = event.getX() - downX;
+                    float dy = event.getY() - downY;
+                    if (Math.abs(dx) > dp(28) && Math.abs(dx) > Math.abs(dy) * 1.4f) {
+                        dragging = true;
+                    }
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                if (dragging && !multiTouch) {
+                    float moved = event.getX() - downX;
+                    if (moved < -dp(64) && page == 0) {
+                        showPage(1);
+                    } else if (moved > dp(64) && page == 1) {
+                        showPage(0);
+                    }
+                }
+                dragging = false;
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                dragging = false;
+                break;
+            default:
+                break;
+        }
+        return super.dispatchTouchEvent(event);
+    }
+
+    private void showPage(int target) {
+        if (target == page) {
+            return;
+        }
+        if (target == 1) {
+            flipper.setInAnimation(AnimationUtils.loadAnimation(this, R.anim.page_in_right));
+            flipper.setOutAnimation(AnimationUtils.loadAnimation(this, R.anim.page_out_left));
+            flipper.showNext();
+        } else {
+            flipper.setInAnimation(AnimationUtils.loadAnimation(this, R.anim.page_in_left));
+            flipper.setOutAnimation(AnimationUtils.loadAnimation(this, R.anim.page_out_right));
+            flipper.showPrevious();
+        }
+        page = target;
+        updateDots();
+    }
+
+    private void updateDots() {
+        paintDot(dotFirst, page == 0);
+        paintDot(dotSecond, page == 1);
+    }
+
+    private void paintDot(View dot, boolean active) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.OVAL);
+        drawable.setColor(active ? accent : secondaryColor);
+        dot.setBackground(drawable);
     }
 
     // ------------------------------------------------------------------ 数据源
@@ -248,6 +357,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             card.setOnClickListener(v -> {
                 if (new File(path).isDirectory()) {
                     left.setLocal(path);
+                    showPage(0);
                 } else {
                     Bg.toast(LocationsActivity.this, "该文件夹不存在");
                 }
@@ -310,7 +420,10 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         for (final Server server : servers) {
             View card = addCard(serversBox, R.drawable.ic_cloud,
                     color(R.attr.lumenAccent2), server.name, server.url, -1);
-            card.setOnClickListener(v -> left.setServer(server));
+            card.setOnClickListener(v -> {
+                left.setServer(server);
+                showPage(0);
+            });
             card.setOnLongClickListener(v -> {
                 showServerMenu(server);
                 return true;
@@ -575,11 +688,11 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     private void showAbout() {
         new AlertDialog.Builder(this)
-                .setTitle("流光文件")
+                .setTitle("超级文件")
                 .setMessage("版本 1.0\n\n"
-                        + "纯 Java · 零第三方依赖 · 双栏浏览\n"
+                        + "纯 Java · 零第三方依赖 · 双面板左右滑动\n"
                         + "本地全盘管理 + WebDAV 客户端\n\n"
-                        + "特性：双栏独立数据源、跨栏复制、多选复制/剪切/粘贴、"
+                        + "特性：双面板独立数据源、跨面板复制、多选复制/剪切/粘贴、"
                         + "搜索、压缩解压、图片与文本预览、双指缩放列表行、明暗主题。")
                 .setPositiveButton("知道了", null)
                 .show();

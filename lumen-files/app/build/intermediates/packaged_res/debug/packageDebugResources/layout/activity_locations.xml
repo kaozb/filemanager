@@ -12,31 +12,47 @@
         android:layout_height="60dp"
         android:background="?attr/lumenSurface" />
 
+    <!-- 面板指示点：左右滑动切换两个面板 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="14dp"
+        android:background="?attr/lumenSurface"
+        android:gravity="center"
         android:orientation="horizontal">
+
+        <View
+            android:id="@+id/dotFirst"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:background="@drawable/bg_dot" />
+
+        <View
+            android:id="@+id/dotSecond"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_dot" />
+
+    </LinearLayout>
+
+    <ViewFlipper
+        android:id="@+id/flipper"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <LinearLayout
             android:id="@+id/paneLeft"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:orientation="vertical" />
-
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:background="?attr/lumenDivider" />
 
         <LinearLayout
             android:id="@+id/paneRight"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:orientation="vertical" />
 
-    </LinearLayout>
+    </ViewFlipper>
 
 </LinearLayout>
