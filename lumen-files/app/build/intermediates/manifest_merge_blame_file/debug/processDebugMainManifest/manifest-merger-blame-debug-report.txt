@@ -1,8 +1,8 @@
 1<?xml version="1.0" encoding="utf-8"?>
 2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 3    package="com.lumen.files"
-4    android:versionCode="6"
-5    android:versionName="10.26.2.22" >
+4    android:versionCode="7"
+5    android:versionName="10.26.2.27" >
 6
 7    <uses-sdk
 8        android:minSdkVersion="21"
@@ -37,7 +37,7 @@
 24        android:extractNativeLibs="true"
 25        android:icon="@mipmap/ic_launcher"
 25-->/workspace/lumen-files/app/src/main/AndroidManifest.xml:16:9-43
-26        android:label="超级文件 6"
+26        android:label="超级文件 7"
 26-->/workspace/lumen-files/app/src/main/AndroidManifest.xml:17:9-36
 27        android:requestLegacyExternalStorage="true"
 27-->/workspace/lumen-files/app/src/main/AndroidManifest.xml:18:9-52

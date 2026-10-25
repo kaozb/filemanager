@@ -2,15 +2,15 @@ package com.lumen.files;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.graphics.drawable.Drawable;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Switch;
@@ -47,8 +47,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     private TextView storageSummary;
     private ProgressBar storageBar;
     private View permissionCard;
-    private LinearLayout serversBox;
-    private TextView sourceValue;
+    private LinearLayout sourceTiles;
     private TextView rowSizeValue;
     private TextView sortValue;
 
@@ -223,7 +222,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     public void onPaneChanged(PaneController pane) {
         if (pane == currentPane()) {
             updateToolbar();
-            updateSourceValue();
+            renderSourceTiles();
         }
     }
 
@@ -325,19 +324,13 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         storageSummary = sheet.findViewById(R.id.storageSummary);
         storageBar = sheet.findViewById(R.id.storageBar);
         permissionCard = sheet.findViewById(R.id.permissionCard);
-        serversBox = sheet.findViewById(R.id.serversBox);
-        sourceValue = sheet.findViewById(R.id.sourceValue);
+        sourceTiles = sheet.findViewById(R.id.sourceTiles);
         rowSizeValue = sheet.findViewById(R.id.rowSizeValue);
         sortValue = sheet.findViewById(R.id.sortValue);
 
         sheet.findViewById(R.id.sheetClose).setOnClickListener(v -> dialog.dismiss());
-        sheet.findViewById(R.id.sourceRow).setOnClickListener(v ->
-                onChooseSource(currentPane()));
-        sourceValue.setText(currentPane().sourceLabel());
         sheet.findViewById(R.id.grantBtn).setOnClickListener(v ->
                 StorageUtil.requestAccess(this));
-        sheet.findViewById(R.id.addServerBtn).setOnClickListener(v ->
-                showServerDialog(null));
 
         Switch prefDark = sheet.findViewById(R.id.prefDark);
         Switch prefHidden = sheet.findViewById(R.id.prefHidden);
@@ -362,21 +355,13 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             storageSummary = null;
             storageBar = null;
             permissionCard = null;
-            serversBox = null;
-            sourceValue = null;
+            sourceTiles = null;
             rowSizeValue = null;
             sortValue = null;
         });
 
         renderSettings();
         dialog.show();
-    }
-
-    /** 设置面板里显示当前面板的数据源名称，切换后联动刷新。 */
-    private void updateSourceValue() {
-        if (sourceValue != null) {
-            sourceValue.setText(currentPane().sourceLabel());
-        }
     }
 
     private void renderSettings() {
@@ -394,7 +379,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             storageBar.setProgress((int) Math.min(1000, used * 1000 / usage[0]));
         }
 
-        renderServers();
+        renderSourceTiles();
     }
 
     @SuppressWarnings("deprecation")
@@ -402,51 +387,90 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         return getResources().getColor(id);
     }
 
-    private void renderServers() {
-        if (serversBox == null) {
+    /**
+     * 数据源平铺块：一排两个，点击切换当前面板，
+     * 长按服务器块可编辑/删除，末尾是虚线的添加入口。
+     */
+    private void renderSourceTiles() {
+        if (sourceTiles == null) {
             return;
         }
-        serversBox.removeAllViews();
-        List<Server> servers = Prefs.servers(this);
-        if (servers.isEmpty()) {
-            TextView empty = new TextView(this);
-            empty.setText("还没有服务器，点击下方按钮添加");
-            empty.setTextColor(secondaryColor);
-            empty.setTextSize(13);
-            empty.setPadding(0, dp(4), 0, dp(10));
-            serversBox.addView(empty);
-            return;
-        }
-        for (final Server server : servers) {
-            View card = addCard(serversBox, R.drawable.ic_cloud,
-                    color(R.attr.lumenAccent2), server.name, server.url, -1);
-            card.setOnClickListener(v -> {
-                left.setServer(server);
-                showPage(0);
-            });
-            card.setOnLongClickListener(v -> {
-                showServerMenu(server);
-                return true;
-            });
-            serversBox.addView(card);
-        }
-    }
+        sourceTiles.removeAllViews();
 
-    private View addCard(ViewGroup parent, int iconResource, int tintColor, String title,
-                         String subtitle, int percent) {
-        View card = getLayoutInflater().inflate(R.layout.item_location, parent, false);
-        ImageView icon = card.findViewById(R.id.icon);
-        Drawable drawable = getDrawable(iconResource).mutate();
-        drawable.setTint(tintColor);
-        icon.setImageDrawable(drawable);
-        ((TextView) card.findViewById(R.id.title)).setText(title);
-        ((TextView) card.findViewById(R.id.subtitle)).setText(subtitle);
-        ProgressBar bar = card.findViewById(R.id.bar);
-        if (percent >= 0) {
-            bar.setVisibility(View.VISIBLE);
-            bar.setProgress(Math.min(1000, Math.max(0, percent)));
+        final ArrayList<String> names = new ArrayList<>();
+        final ArrayList<Runnable> actions = new ArrayList<>();
+        final ArrayList<Server> servers = new ArrayList<>();
+
+        List<File> roots = StorageUtil.roots();
+        for (final File root : roots) {
+            names.add(StorageUtil.label(root));
+            actions.add(() -> currentPane().setLocal(root.getAbsolutePath()));
+            servers.add(null);
         }
-        return card;
+        if (roots.isEmpty()) {
+            names.add("开启所有文件访问权限");
+            actions.add(() -> StorageUtil.requestAccess(this));
+            servers.add(null);
+        }
+        for (final Server server : Prefs.servers(this)) {
+            names.add(server.name);
+            actions.add(() -> currentPane().setServer(server));
+            servers.add(server);
+        }
+
+        final String current = currentPane().sourceLabel();
+        int onAccentContainer = color(R.attr.lumenOnAccentContainer);
+        for (int i = 0; i < names.size(); i += 2) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            for (int j = i; j < Math.min(i + 2, names.size()); j++) {
+                final int index = j;
+                boolean selected = names.get(j).equals(current);
+                TextView chip = new TextView(this);
+                chip.setText(names.get(j));
+                chip.setTextSize(13);
+                chip.setSingleLine(true);
+                chip.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+                chip.setGravity(Gravity.CENTER);
+                chip.setPadding(dp(10), dp(12), dp(10), dp(12));
+                chip.setBackgroundResource(selected
+                        ? R.drawable.bg_chip_on : R.drawable.bg_chip);
+                chip.setTextColor(selected ? onAccentContainer : textColor);
+                chip.setOnClickListener(v -> actions.get(index).run());
+                Server server = servers.get(j);
+                if (server != null) {
+                    chip.setOnLongClickListener(v -> {
+                        showServerMenu(server);
+                        return true;
+                    });
+                }
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                if (j > i) {
+                    params.leftMargin = dp(8);
+                }
+                if (i > 0 && j == i) {
+                    params.topMargin = dp(8);
+                }
+                chip.setLayoutParams(params);
+                row.addView(chip);
+            }
+            sourceTiles.addView(row);
+        }
+
+        TextView add = new TextView(this);
+        add.setText("＋ 添加服务器");
+        add.setTextSize(12.5f);
+        add.setTypeface(Typeface.DEFAULT_BOLD);
+        add.setTextColor(accent);
+        add.setGravity(Gravity.CENTER);
+        add.setBackgroundResource(R.drawable.bg_add_server);
+        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(44));
+        addParams.topMargin = dp(8);
+        add.setLayoutParams(addParams);
+        add.setOnClickListener(v -> showServerDialog(null));
+        sourceTiles.addView(add);
     }
 
     // ------------------------------------------------------------------ 行大小 / 排序
