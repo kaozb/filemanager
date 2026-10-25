@@ -51,67 +51,58 @@
 
         </LinearLayout>
 
-        <!-- 存储 -->
+        <!-- 快捷入口：添加服务器占 1/4，其余三个预留 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:background="@drawable/bg_card"
-            android:orientation="vertical"
-            android:padding="15dp">
+            android:orientation="horizontal">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+            <TextView
+                android:id="@+id/addServerBtn"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_add_server"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:text="＋ 添加"
+                android:textColor="?attr/lumenAccent"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
-                <ImageView
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:background="@drawable/bg_icon_container"
-                    android:contentDescription="@null"
-                    android:padding="9dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_storage"
-                    android:tint="?attr/lumenAccent" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chip"
+                android:gravity="center"
+                android:text="预留"
+                android:textColor="?attr/lumenSecondary"
+                android:textSize="12sp" />
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chip"
+                android:gravity="center"
+                android:text="预留"
+                android:textColor="?attr/lumenSecondary"
+                android:textSize="12sp" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="内部存储"
-                        android:textColor="?attr/lumenText"
-                        android:textSize="13.5sp" />
-
-                    <TextView
-                        android:id="@+id/storageSummary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
-                        android:textColor="?attr/lumenSecondary"
-                        android:textSize="10.5sp" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <ProgressBar
-                android:id="@+id/storageBar"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="match_parent"
-                android:layout_height="6dp"
-                android:layout_marginTop="12dp"
-                android:max="1000"
-                android:progressBackgroundTint="?attr/lumenDivider"
-                android:progressTint="?attr/lumenAccent" />
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chip"
+                android:gravity="center"
+                android:text="预留"
+                android:textColor="?attr/lumenSecondary"
+                android:textSize="12sp" />
 
         </LinearLayout>
 
@@ -183,26 +174,13 @@
             style="@style/SectionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="WEBDAV 服务器" />
+            android:text="数据源 · 点击切换当前面板" />
 
         <LinearLayout
-            android:id="@+id/serversBox"
+            android:id="@+id/sourceTiles"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" />
-
-        <TextView
-            android:id="@+id/addServerBtn"
-            android:layout_width="match_parent"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_add_server"
-            android:fontFamily="sans-serif-medium"
-            android:gravity="center"
-            android:text="＋ 添加 WebDAV 服务器"
-            android:textColor="?attr/lumenAccent"
-            android:textSize="12.5sp"
-            android:textStyle="bold" />
 
         <TextView
             style="@style/SectionTitle"
@@ -210,109 +188,133 @@
             android:layout_height="wrap_content"
             android:text="偏好" />
 
+        <!-- 偏好：一排两个 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingTop="11dp"
-            android:paddingBottom="11dp">
+            android:orientation="horizontal">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/pref_dark"
-                android:textColor="?attr/lumenText"
-                android:textSize="13.5sp" />
+                android:background="?android:attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="11dp"
+                android:paddingBottom="11dp">
 
-            <Switch
-                android:id="@+id/prefDark"
-                style="@style/LumenSwitch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/pref_dark"
+                    android:textColor="?attr/lumenText"
+                    android:textSize="13.5sp" />
+
+                <Switch
+                    android:id="@+id/prefDark"
+                    style="@style/LumenSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:background="?android:attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="11dp"
+                android:paddingBottom="11dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/pref_hidden"
+                    android:textColor="?attr/lumenText"
+                    android:textSize="13.5sp" />
+
+                <Switch
+                    android:id="@+id/prefHidden"
+                    style="@style/LumenSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingTop="11dp"
-            android:paddingBottom="11dp">
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
 
-            <TextView
+            <LinearLayout
+                android:id="@+id/rowSizeRow"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/pref_hidden"
-                android:textColor="?attr/lumenText"
-                android:textSize="13.5sp" />
+                android:background="?android:attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="11dp"
+                android:paddingBottom="11dp">
 
-            <Switch
-                android:id="@+id/prefHidden"
-                style="@style/LumenSwitch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/pref_row_size"
+                    android:textColor="?attr/lumenText"
+                    android:textSize="13.5sp" />
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/rowSizeValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="4dp"
+                    android:text="标准"
+                    android:textColor="?attr/lumenSecondary"
+                    android:textSize="12sp" />
 
-        <LinearLayout
-            android:id="@+id/rowSizeRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:attr/selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingTop="11dp"
-            android:paddingBottom="11dp">
+            </LinearLayout>
 
-            <TextView
+            <LinearLayout
+                android:id="@+id/sortRow"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
-                android:text="@string/pref_row_size"
-                android:textColor="?attr/lumenText"
-                android:textSize="13.5sp" />
+                android:background="?android:attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="11dp"
+                android:paddingBottom="11dp">
 
-            <TextView
-                android:id="@+id/rowSizeValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:drawablePadding="4dp"
-                android:text="标准"
-                android:textColor="?attr/lumenSecondary"
-                android:textSize="12sp" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/pref_sort"
+                    android:textColor="?attr/lumenText"
+                    android:textSize="13.5sp" />
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/sortValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="4dp"
+                    android:text="按名称"
+                    android:textColor="?attr/lumenSecondary"
+                    android:textSize="12sp" />
 
-        <LinearLayout
-            android:id="@+id/sortRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?android:attr/selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingTop="11dp"
-            android:paddingBottom="11dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/pref_sort"
-                android:textColor="?attr/lumenText"
-                android:textSize="13.5sp" />
-
-            <TextView
-                android:id="@+id/sortValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:drawablePadding="4dp"
-                android:text="按名称"
-                android:textColor="?attr/lumenSecondary"
-                android:textSize="12sp" />
+            </LinearLayout>
 
         </LinearLayout>
 

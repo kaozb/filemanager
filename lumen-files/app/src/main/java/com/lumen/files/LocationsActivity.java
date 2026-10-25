@@ -2,17 +2,15 @@ package com.lumen.files;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toolbar;
@@ -24,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * 首页：两个文件面板（本地 / WebDAV 独立切换），左右滑动跟手切换面板；
@@ -44,10 +41,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     private PaneController selectionPane;
 
     // 悬浮设置面板内的视图（打开时绑定，关闭时置空）
-    private TextView storageSummary;
-    private ProgressBar storageBar;
     private View permissionCard;
-    private LinearLayout serversBox;
+    private LinearLayout sourceTiles;
     private TextView rowSizeValue;
     private TextView sortValue;
 
@@ -58,6 +53,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_locations);
+        // 应用被打开：清理上次遗留的 WebDAV 打开缓存
+        cleanOpenCache();
 
         toolbar = findViewById(R.id.toolbar);
         styleToolbar(toolbar);
@@ -222,6 +219,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     public void onPaneChanged(PaneController pane) {
         if (pane == currentPane()) {
             updateToolbar();
+            renderSourceTiles();
         }
     }
 
@@ -284,7 +282,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
         List<File> roots = StorageUtil.roots();
         for (final File root : roots) {
-            labels.add(StorageUtil.label(root) + " · " + root.getAbsolutePath());
+            labels.add(StorageUtil.label(root));
             actions.add(() -> pane.setLocal(root.getAbsolutePath()));
         }
         if (roots.isEmpty()) {
@@ -292,7 +290,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             actions.add(() -> StorageUtil.requestAccess(this));
         }
         for (final Server server : Prefs.servers(this)) {
-            labels.add("WebDAV · " + server.name + " · " + server.url);
+            labels.add(server.name);
             actions.add(() -> pane.setServer(server));
         }
         labels.add("＋ 添加 WebDAV 服务器");
@@ -300,11 +298,6 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
         showActionSheet("切换数据源", labels.toArray(new String[0]), -1,
                 which -> actions.get(which).run());
-    }
-
-    @Override
-    public void onOpenSettings() {
-        showSettingsSheet();
     }
 
     @Override
@@ -325,18 +318,16 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             window.setGravity(Gravity.BOTTOM);
         }
 
-        storageSummary = sheet.findViewById(R.id.storageSummary);
-        storageBar = sheet.findViewById(R.id.storageBar);
         permissionCard = sheet.findViewById(R.id.permissionCard);
-        serversBox = sheet.findViewById(R.id.serversBox);
+        sourceTiles = sheet.findViewById(R.id.sourceTiles);
         rowSizeValue = sheet.findViewById(R.id.rowSizeValue);
         sortValue = sheet.findViewById(R.id.sortValue);
 
         sheet.findViewById(R.id.sheetClose).setOnClickListener(v -> dialog.dismiss());
-        sheet.findViewById(R.id.grantBtn).setOnClickListener(v ->
-                StorageUtil.requestAccess(this));
         sheet.findViewById(R.id.addServerBtn).setOnClickListener(v ->
                 showServerDialog(null));
+        sheet.findViewById(R.id.grantBtn).setOnClickListener(v ->
+                StorageUtil.requestAccess(this));
 
         Switch prefDark = sheet.findViewById(R.id.prefDark);
         Switch prefHidden = sheet.findViewById(R.id.prefHidden);
@@ -358,10 +349,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         sortValue.setText(sortLabel());
 
         dialog.setOnDismissListener(d -> {
-            storageSummary = null;
-            storageBar = null;
             permissionCard = null;
-            serversBox = null;
+            sourceTiles = null;
             rowSizeValue = null;
             sortValue = null;
         });
@@ -371,21 +360,36 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     }
 
     private void renderSettings() {
-        if (storageSummary == null) {
+        if (permissionCard == null) {
             return;
         }
         boolean granted = StorageUtil.hasAccess(this);
         permissionCard.setVisibility(granted ? View.GONE : View.VISIBLE);
 
-        long[] usage = StorageUtil.usage(Environment.getExternalStorageDirectory());
-        storageSummary.setText(String.format(Locale.US, "可用 %s / 共 %s",
-                Format.size(usage[1]), Format.size(usage[0])));
-        if (usage[0] > 0) {
-            long used = usage[0] - usage[1];
-            storageBar.setProgress((int) Math.min(1000, used * 1000 / usage[0]));
-        }
+        renderSourceTiles();
+    }
 
-        renderServers();
+    /**
+     * 启动时清空 cache/open（WebDAV 文件「打开」时的临时下载）
+     * 与可能残留的 preview_* 预览临时文件。
+     */
+    private void cleanOpenCache() {
+        Bg.pool().execute(() -> {
+            File[] opened = new File(getCacheDir(), "open").listFiles();
+            if (opened != null) {
+                for (File file : opened) {
+                    file.delete();
+                }
+            }
+            File[] cached = getCacheDir().listFiles();
+            if (cached != null) {
+                for (File file : cached) {
+                    if (file.getName().startsWith("preview_")) {
+                        file.delete();
+                    }
+                }
+            }
+        });
     }
 
     @SuppressWarnings("deprecation")
@@ -393,51 +397,76 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         return getResources().getColor(id);
     }
 
-    private void renderServers() {
-        if (serversBox == null) {
+    /**
+     * 数据源平铺块：一排两个，点击切换当前面板，
+     * 长按服务器块可编辑/删除，末尾是虚线的添加入口。
+     */
+    private void renderSourceTiles() {
+        if (sourceTiles == null) {
             return;
         }
-        serversBox.removeAllViews();
-        List<Server> servers = Prefs.servers(this);
-        if (servers.isEmpty()) {
-            TextView empty = new TextView(this);
-            empty.setText("还没有服务器，点击下方按钮添加");
-            empty.setTextColor(secondaryColor);
-            empty.setTextSize(13);
-            empty.setPadding(0, dp(4), 0, dp(10));
-            serversBox.addView(empty);
-            return;
-        }
-        for (final Server server : servers) {
-            View card = addCard(serversBox, R.drawable.ic_cloud,
-                    color(R.attr.lumenAccent2), server.name, server.url, -1);
-            card.setOnClickListener(v -> {
-                left.setServer(server);
-                showPage(0);
-            });
-            card.setOnLongClickListener(v -> {
-                showServerMenu(server);
-                return true;
-            });
-            serversBox.addView(card);
-        }
-    }
+        sourceTiles.removeAllViews();
 
-    private View addCard(ViewGroup parent, int iconResource, int tintColor, String title,
-                         String subtitle, int percent) {
-        View card = getLayoutInflater().inflate(R.layout.item_location, parent, false);
-        ImageView icon = card.findViewById(R.id.icon);
-        Drawable drawable = getDrawable(iconResource).mutate();
-        drawable.setTint(tintColor);
-        icon.setImageDrawable(drawable);
-        ((TextView) card.findViewById(R.id.title)).setText(title);
-        ((TextView) card.findViewById(R.id.subtitle)).setText(subtitle);
-        ProgressBar bar = card.findViewById(R.id.bar);
-        if (percent >= 0) {
-            bar.setVisibility(View.VISIBLE);
-            bar.setProgress(Math.min(1000, Math.max(0, percent)));
+        final ArrayList<String> names = new ArrayList<>();
+        final ArrayList<Runnable> actions = new ArrayList<>();
+        final ArrayList<Server> servers = new ArrayList<>();
+
+        List<File> roots = StorageUtil.roots();
+        for (final File root : roots) {
+            names.add(StorageUtil.label(root));
+            actions.add(() -> currentPane().setLocal(root.getAbsolutePath()));
+            servers.add(null);
         }
-        return card;
+        if (roots.isEmpty()) {
+            names.add("开启所有文件访问权限");
+            actions.add(() -> StorageUtil.requestAccess(this));
+            servers.add(null);
+        }
+        for (final Server server : Prefs.servers(this)) {
+            names.add(server.name);
+            actions.add(() -> currentPane().setServer(server));
+            servers.add(server);
+        }
+
+        final String current = currentPane().sourceLabel();
+        int onAccentContainer = color(R.attr.lumenOnAccentContainer);
+        for (int i = 0; i < names.size(); i += 2) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            for (int j = i; j < Math.min(i + 2, names.size()); j++) {
+                final int index = j;
+                boolean selected = names.get(j).equals(current);
+                TextView chip = new TextView(this);
+                chip.setText(names.get(j));
+                chip.setTextSize(13);
+                chip.setSingleLine(true);
+                chip.setEllipsize(TextUtils.TruncateAt.MIDDLE);
+                chip.setGravity(Gravity.CENTER);
+                chip.setPadding(dp(10), dp(12), dp(10), dp(12));
+                chip.setBackgroundResource(selected
+                        ? R.drawable.bg_chip_on : R.drawable.bg_chip);
+                chip.setTextColor(selected ? onAccentContainer : textColor);
+                chip.setOnClickListener(v -> actions.get(index).run());
+                Server server = servers.get(j);
+                if (server != null) {
+                    chip.setOnLongClickListener(v -> {
+                        showServerMenu(server);
+                        return true;
+                    });
+                }
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                if (j > i) {
+                    params.leftMargin = dp(8);
+                }
+                if (i > 0 && j == i) {
+                    params.topMargin = dp(8);
+                }
+                chip.setLayoutParams(params);
+                row.addView(chip);
+            }
+            sourceTiles.addView(row);
+        }
     }
 
     // ------------------------------------------------------------------ 行大小 / 排序

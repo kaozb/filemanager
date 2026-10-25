@@ -60,6 +60,7 @@ drawable bg_card
 drawable bg_check_off
 drawable bg_check_on
 drawable bg_chip
+drawable bg_chip_on
 drawable bg_dialog
 drawable bg_dialog_dark
 drawable bg_dot
@@ -170,13 +171,11 @@ id selectionCount
 id selectionDelete
 id selectionMove
 id selectionZip
-id serversBox
 id sheetClose
 id sheetScroll
 id sortRow
 id sortValue
-id storageBar
-id storageSummary
+id sourceTiles
 id subtitle
 id title
 id toolbar
