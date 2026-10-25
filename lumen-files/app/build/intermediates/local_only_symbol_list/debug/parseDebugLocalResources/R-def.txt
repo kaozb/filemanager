@@ -12,6 +12,7 @@ attr lumenAccentContainer
 attr lumenBg
 attr lumenCard
 attr lumenContainer
+attr lumenDanger
 attr lumenDivider
 attr lumenOnAccent
 attr lumenOnAccentContainer
@@ -25,6 +26,7 @@ color dark_accent_container
 color dark_bg
 color dark_card
 color dark_container
+color dark_danger
 color dark_divider
 color dark_on_accent
 color dark_on_accent_container
@@ -39,6 +41,7 @@ color light_accent_container
 color light_bg
 color light_card
 color light_container
+color light_danger
 color light_divider
 color light_on_accent
 color light_on_accent_container

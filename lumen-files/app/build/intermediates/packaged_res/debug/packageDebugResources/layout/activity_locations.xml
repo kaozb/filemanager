@@ -9,7 +9,7 @@
     <android.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="52dp"
         android:background="?attr/lumenSurface" />
 
     <!-- 面板指示点：左右滑动切换两个面板 -->

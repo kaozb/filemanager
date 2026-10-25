@@ -13,4 +13,5 @@
     <attr name="lumenOnAccentContainer" format="color" />
     <attr name="lumenAccent2" format="color" />
     <attr name="lumenRipple" format="color" />
+    <attr name="lumenDanger" format="color" />
 </resources>

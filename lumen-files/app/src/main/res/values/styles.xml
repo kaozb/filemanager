@@ -15,6 +15,7 @@
         <item name="lumenOnAccentContainer">@color/light_on_accent_container</item>
         <item name="lumenAccent2">@color/light_accent2</item>
         <item name="lumenRipple">@color/light_ripple</item>
+        <item name="lumenDanger">@color/light_danger</item>
         <item name="android:colorAccent">@color/light_accent</item>
         <item name="android:textColorPrimary">@color/light_text</item>
         <item name="android:textColorSecondary">@color/light_secondary</item>
@@ -40,6 +41,7 @@
         <item name="lumenOnAccentContainer">@color/dark_on_accent_container</item>
         <item name="lumenAccent2">@color/dark_accent2</item>
         <item name="lumenRipple">@color/dark_ripple</item>
+        <item name="lumenDanger">@color/dark_danger</item>
         <item name="android:colorAccent">@color/dark_accent</item>
         <item name="android:textColorPrimary">@color/dark_text</item>
         <item name="android:textColorSecondary">@color/dark_secondary</item>
@@ -91,7 +93,7 @@
     </style>
 
     <style name="ToolbarTitle">
-        <item name="android:textSize">20sp</item>
+        <item name="android:textSize">17sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textStyle">normal</item>
     </style>

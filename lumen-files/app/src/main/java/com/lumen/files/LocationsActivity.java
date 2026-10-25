@@ -81,7 +81,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         toolbar.setNavigationOnClickListener(v -> currentPane().goUp());
         toolbar.setOnClickListener(v -> onChooseSource(currentPane()));
         toolbar.setOnLongClickListener(v -> {
-            currentPane().showPaneMenu(toolbar);
+            currentPane().showPaneMenu();
             return true;
         });
 
@@ -267,11 +267,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         labels.add("＋ 添加 WebDAV 服务器");
         actions.add(() -> showServerDialog(null));
 
-        new AlertDialog.Builder(this)
-                .setTitle("选择数据源")
-                .setItems(labels.toArray(new String[0]), (dialog, which) ->
-                        actions.get(which).run())
-                .show();
+        showActionSheet("切换数据源", labels.toArray(new String[0]), -1,
+                which -> actions.get(which).run());
     }
 
     @Override
@@ -595,16 +592,13 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     // ------------------------------------------------------------------ 服务器管理
 
     private void showServerMenu(final Server server) {
-        new AlertDialog.Builder(this)
-                .setTitle(server.name)
-                .setItems(new String[]{"编辑", "删除"}, (dialog, which) -> {
-                    if (which == 0) {
-                        showServerDialog(server);
-                    } else {
-                        confirmDeleteServer(server);
-                    }
-                })
-                .show();
+        showActionSheet(server.name, new String[]{"编辑", "删除"}, 1, which -> {
+            if (which == 0) {
+                showServerDialog(server);
+            } else {
+                confirmDeleteServer(server);
+            }
+        });
     }
 
     private void confirmDeleteServer(final Server server) {

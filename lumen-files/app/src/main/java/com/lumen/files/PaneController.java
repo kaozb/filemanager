@@ -9,7 +9,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -137,14 +136,20 @@ public final class PaneController {
         return serverId;
     }
 
-    /** 顶栏标题：根目录显示存储对象名称，子目录显示当前目录名。 */
+    /** 顶栏标题：显示存储器内的目录（相对路径），根目录时只显示存储对象名称。 */
     String title() {
+        String root = fs.isLocal() ? StorageUtil.label(new File(rootPath)) : fs.label();
         String current = trimTrailing(path);
-        if (current.equals(trimTrailing(rootPath)) || "/".equals(current)) {
-            return fs.isLocal() ? StorageUtil.label(new File(rootPath)) : fs.label();
+        String base = trimTrailing(rootPath);
+        if (current.equals(base) || "/".equals(current)) {
+            return root;
         }
-        int slash = current.lastIndexOf('/');
-        return slash < 0 ? current : current.substring(slash + 1);
+        String relative = current.startsWith(base)
+                ? current.substring(base.length()) : current;
+        while (relative.startsWith("/")) {
+            relative = relative.substring(1);
+        }
+        return root + " › " + relative.replace("/", " › ");
     }
 
     boolean canGoUp() {
@@ -290,49 +295,39 @@ public final class PaneController {
 
     private void showItemMenu(final Entry entry) {
         final String[] options = {"打开", "重命名", "删除", "复制到另一侧", "详情"};
-        new AlertDialog.Builder(activity)
-                .setTitle(entry.name)
-                .setItems(options, (dialog, which) -> {
-                    String option = options[which];
-                    if ("打开".equals(option)) {
-                        openEntry(entry);
-                    } else if ("重命名".equals(option)) {
-                        renameDialog(entry);
-                    } else if ("删除".equals(option)) {
-                        deleteDialog(entry);
-                    } else if ("复制到另一侧".equals(option)) {
-                        copyToOther(entry);
-                    } else {
-                        details(entry);
-                    }
-                })
-                .show();
+        activity.showActionSheet(entry.name, options, 2, which -> {
+            String option = options[which];
+            if ("打开".equals(option)) {
+                openEntry(entry);
+            } else if ("重命名".equals(option)) {
+                renameDialog(entry);
+            } else if ("删除".equals(option)) {
+                deleteDialog(entry);
+            } else if ("复制到另一侧".equals(option)) {
+                copyToOther(entry);
+            } else {
+                details(entry);
+            }
+        });
     }
 
     /** 面板菜单：宿主在长按顶栏标题时弹出。 */
-    void showPaneMenu(View anchor) {
-        PopupMenu menu = new PopupMenu(activity, anchor);
-        menu.getMenu().add("切换数据源");
-        menu.getMenu().add("新建文件夹");
-        menu.getMenu().add("刷新");
-        menu.getMenu().add("在完整页面打开");
-        menu.getMenu().add("WebDAV 设置");
-        menu.setOnMenuItemClickListener(item -> {
-            String title = String.valueOf(item.getTitle());
-            if ("切换数据源".equals(title)) {
+    void showPaneMenu() {
+        final String[] options = {"切换数据源", "新建文件夹", "刷新", "在完整页面打开", "WebDAV 设置"};
+        activity.showActionSheet(title(), options, -1, which -> {
+            String option = options[which];
+            if ("切换数据源".equals(option)) {
                 host.onChooseSource(this);
-            } else if ("新建文件夹".equals(title)) {
+            } else if ("新建文件夹".equals(option)) {
                 newFolder();
-            } else if ("刷新".equals(title)) {
+            } else if ("刷新".equals(option)) {
                 reload();
-            } else if ("在完整页面打开".equals(title)) {
+            } else if ("在完整页面打开".equals(option)) {
                 openFull();
             } else {
                 host.onOpenSettings();
             }
-            return true;
         });
-        menu.show();
     }
 
     private void openFull() {

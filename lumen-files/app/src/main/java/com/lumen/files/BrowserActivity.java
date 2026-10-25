@@ -904,21 +904,18 @@ public final class BrowserActivity extends BaseActivity {
             options.add("下载到本机");
         }
         options.add("详情");
-        new AlertDialog.Builder(this)
-                .setTitle(entry.name)
-                .setItems(options.toArray(new String[0]), (dialog, which) -> {
-                    String option = options.get(which);
-                    if ("预览".equals(option)) {
-                        preview(entry);
-                    } else if ("用其他应用打开".equals(option)) {
-                        openExternal(entry);
-                    } else if ("下载到本机".equals(option)) {
-                        download(entry);
-                    } else {
-                        details(entry);
-                    }
-                })
-                .show();
+        showActionSheet(entry.name, options.toArray(new String[0]), -1, which -> {
+            String option = options.get(which);
+            if ("预览".equals(option)) {
+                preview(entry);
+            } else if ("用其他应用打开".equals(option)) {
+                openExternal(entry);
+            } else if ("下载到本机".equals(option)) {
+                download(entry);
+            } else {
+                details(entry);
+            }
+        });
     }
 
     private void preview(final Entry entry) {

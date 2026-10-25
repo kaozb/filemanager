@@ -14,6 +14,7 @@
     <color name="light_on_accent_container">#05453C</color>
     <color name="light_accent2">#4F63DC</color>
     <color name="light_ripple">#1F0B7E70</color>
+    <color name="light_danger">#D93025</color>
 
     <!-- 暗色主题 · 同构 Token -->
     <color name="dark_bg">#0C1117</color>
@@ -29,6 +30,7 @@
     <color name="dark_on_accent_container">#B7F1E6</color>
     <color name="dark_accent2">#9BACFF</color>
     <color name="dark_ripple">#2E4ED9C3</color>
+    <color name="dark_danger">#FF6B5E</color>
 
     <!-- 文件类型色板 · 唯一来源（Java 侧只引用不定义） -->
     <color name="type_image">#4FA3F7</color>

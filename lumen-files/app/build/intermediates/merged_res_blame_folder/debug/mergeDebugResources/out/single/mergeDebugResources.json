@@ -4,12 +4,12 @@
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/layout/dialog_input.xml"
     },
     {
-        "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_image.xml.flat",
-        "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_image.xml"
-    },
-    {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_folder.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_folder.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_image.xml.flat",
+        "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_image.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_toggle_thumb.xml.flat",
@@ -24,12 +24,12 @@
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_launcher_foreground.xml"
     },
     {
-        "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/menu_menu_browser.xml.flat",
-        "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/menu/menu_browser.xml"
-    },
-    {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_settings.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_settings.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/menu_menu_browser.xml.flat",
+        "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/menu/menu_browser.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_select_all.xml.flat",
@@ -70,6 +70,10 @@
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_shield.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_shield.xml"
+    },
+    {
+        "merged": "com.lumen.files.app-debug-4:/layout_activity_locations.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/activity_locations.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_file_add.xml.flat",
@@ -252,16 +256,16 @@
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/layout/activity_locations.xml"
     },
     {
+        "merged": "com.lumen.files.app-debug-4:/layout_activity_browser.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/activity_browser.xml"
+    },
+    {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_code.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/ic_code.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_bg_chip.xml.flat",
         "source": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-main-6:/drawable/bg_chip.xml"
-    },
-    {
-        "merged": "com.lumen.files.app-debug-4:/menu_menu_locations.xml.flat",
-        "source": "com.lumen.files.app-main-6:/menu/menu_locations.xml"
     },
     {
         "merged": "/root/.gradle/daemon/8.14.6/com.lumen.files.app-debug-4:/drawable_ic_delete.xml.flat",
