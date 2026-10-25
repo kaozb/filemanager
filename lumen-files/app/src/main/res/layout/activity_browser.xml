@@ -13,9 +13,8 @@
         <android.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?android:attr/actionBarSize"
-            android:background="?attr/lumenSurface"
-            android:elevation="3dp" />
+            android:layout_height="60dp"
+            android:background="?attr/lumenSurface" />
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -30,8 +29,10 @@
                 android:divider="@null"
                 android:dividerHeight="0dp"
                 android:listSelector="@drawable/sel_item"
-                android:paddingTop="6dp"
-                android:paddingBottom="96dp"
+                android:paddingStart="10dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="112dp"
                 android:scrollbars="none" />
 
             <ProgressBar
@@ -42,18 +43,36 @@
                 android:indeterminateTint="?attr/lumenAccent"
                 android:visibility="gone" />
 
-            <TextView
+            <LinearLayout
                 android:id="@+id/empty"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:lineSpacingExtra="4dp"
+                android:orientation="vertical"
                 android:padding="32dp"
-                android:text="这个文件夹是空的"
-                android:textColor="?attr/lumenSecondary"
-                android:textSize="14sp"
-                android:visibility="gone" />
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:contentDescription="@null"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_folder"
+                    android:tint="?attr/lumenSecondary" />
+
+                <TextView
+                    android:id="@+id/emptyText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:gravity="center"
+                    android:lineSpacingExtra="4dp"
+                    android:text="这个文件夹是空的"
+                    android:textColor="?attr/lumenSecondary"
+                    android:textSize="14sp" />
+
+            </LinearLayout>
 
             <ImageButton
                 android:id="@+id/fab"
@@ -61,56 +80,99 @@
                 android:layout_height="56dp"
                 android:layout_gravity="bottom|end"
                 android:layout_marginEnd="20dp"
-                android:layout_marginBottom="22dp"
+                android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_fab"
                 android:contentDescription="@string/menu_new_folder"
                 android:elevation="8dp"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_add"
-                android:tint="#06231F" />
+                android:tint="?attr/lumenOnAccent" />
+
+            <LinearLayout
+                android:id="@+id/pasteBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="22dp"
+                android:background="@drawable/bg_pill"
+                android:elevation="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="18dp"
+                android:paddingTop="9dp"
+                android:paddingEnd="9dp"
+                android:paddingBottom="9dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="19dp"
+                    android:layout_height="19dp"
+                    android:contentDescription="@null"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_copy"
+                    android:tint="?attr/lumenSecondary" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/pasteText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:singleLine="true"
+                        android:textColor="?attr/lumenText"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/pasteSource"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:ellipsize="middle"
+                        android:fontFamily="monospace"
+                        android:singleLine="true"
+                        android:textColor="?attr/lumenSecondary"
+                        android:textSize="9.5sp" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/pasteBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_tonal"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:text="粘贴"
+                    android:textColor="?attr/lumenOnAccentContainer"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/pasteClose"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="2dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/menu_delete"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_close"
+                    android:tint="?attr/lumenSecondary" />
+
+            </LinearLayout>
 
         </FrameLayout>
-
-        <LinearLayout
-            android:id="@+id/pasteBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/lumenSurface"
-            android:elevation="12dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="16dp"
-            android:paddingTop="6dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="6dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/pasteText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="?attr/lumenText"
-                android:textSize="13sp" />
-
-            <Button
-                android:id="@+id/pasteBtn"
-                style="@style/ActionButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="粘贴" />
-
-            <ImageButton
-                android:id="@+id/pasteClose"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/menu_delete"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_close"
-                android:tint="?attr/lumenSecondary" />
-
-        </LinearLayout>
 
     </LinearLayout>
 

@@ -49,6 +49,20 @@ public final class Prefs {
         sp(context).edit().putBoolean("show_hidden", show).apply();
     }
 
+    /** 列表行缩放（百分制，70–170），双指捏合与设置面板共享。 */
+    public static int rowScalePercent(Context context) {
+        return sp(context).getInt("row_scale", 100);
+    }
+
+    public static void setRowScalePercent(Context context, int percent) {
+        int clamped = Math.max(70, Math.min(170, percent));
+        sp(context).edit().putInt("row_scale", clamped).apply();
+    }
+
+    public static float rowScale(Context context) {
+        return rowScalePercent(context) / 100f;
+    }
+
     public static String paneSource(Context context, int pane) {
         return sp(context).getString("pane_source_" + pane, "local");
     }

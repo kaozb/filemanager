@@ -9,206 +9,34 @@
     <android.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="?android:attr/actionBarSize"
-        android:background="?attr/lumenSurface"
-        android:elevation="3dp" />
+        android:layout_height="60dp"
+        android:background="?attr/lumenSurface" />
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/lumenSurface"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:paddingBottom="5dp">
-
-        <TextView
-            android:id="@+id/tabFiles"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="4dp"
-            android:text="文件"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tabSettings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="4dp"
-            android:text="WebDAV 与设置"
-            android:textSize="13sp" />
-
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?attr/lumenDivider" />
-
-    <ViewFlipper
-        android:id="@+id/flipper"
-        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="horizontal">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/paneLeft"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical" />
 
-            <LinearLayout
-                android:id="@+id/paneLeft"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="match_parent"
-                android:background="?attr/lumenDivider" />
-
-            <LinearLayout
-                android:id="@+id/paneRight"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical" />
-
-        </LinearLayout>
-
-        <ScrollView
-            android:layout_width="match_parent"
+        <View
+            android:layout_width="1dp"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:scrollbars="none">
+            android:background="?attr/lumenDivider" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingStart="16dp"
-                android:paddingTop="6dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="28dp">
+        <LinearLayout
+            android:id="@+id/paneRight"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical" />
 
-                <TextView
-                    android:id="@+id/storageSummary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="2dp"
-                    android:textColor="?attr/lumenSecondary"
-                    android:textSize="12sp" />
-
-                <LinearLayout
-                    android:id="@+id/permissionCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_card"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp"
-                    android:visibility="gone">
-
-                    <ImageView
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:contentDescription="@null"
-                        android:scaleType="centerInside"
-                        android:src="@drawable/ic_shield"
-                        android:tint="?attr/lumenAccent" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="sans-serif-medium"
-                            android:text="需要所有文件访问权限"
-                            android:textColor="?attr/lumenText"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="开启后才能浏览和管理本机全部文件"
-                            android:textColor="?attr/lumenSecondary"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                    <Button
-                        android:id="@+id/grantBtn"
-                        style="@style/ActionButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="授权" />
-
-                </LinearLayout>
-
-                <TextView
-                    style="@style/SectionTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="WEBDAV 服务器" />
-
-                <LinearLayout
-                    android:id="@+id/serversBox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-
-                <TextView
-                    android:id="@+id/addServerBtn"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_chip"
-                    android:gravity="center"
-                    android:paddingTop="14dp"
-                    android:paddingBottom="14dp"
-                    android:text="＋ 添加 WebDAV 服务器"
-                    android:textColor="?attr/lumenAccent"
-                    android:textSize="14sp" />
-
-                <TextView
-                    style="@style/SectionTitle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="快捷访问" />
-
-                <GridLayout
-                    android:id="@+id/quickGrid"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:columnCount="3" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="22dp"
-                    android:gravity="center"
-                    android:text="纯 Java · 零第三方依赖 · 本地全盘 + WebDAV"
-                    android:textColor="?attr/lumenSecondary"
-                    android:textSize="11sp" />
-
-            </LinearLayout>
-
-        </ScrollView>
-
-    </ViewFlipper>
+    </LinearLayout>
 
 </LinearLayout>

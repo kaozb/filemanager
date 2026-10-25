@@ -1,0 +1,7 @@
+com.lumen.files.app-pngs-0 /workspace/lumen-files/app/build/generated/res/pngs/debug
+com.lumen.files.app-resValues-1 /workspace/lumen-files/app/build/generated/res/resValues/debug
+com.lumen.files.app-packageDebugResources-2 /workspace/lumen-files/app/build/intermediates/incremental/debug/packageDebugResources/merged.dir
+com.lumen.files.app-packageDebugResources-3 /workspace/lumen-files/app/build/intermediates/incremental/debug/packageDebugResources/stripped.dir
+com.lumen.files.app-debug-4 /workspace/lumen-files/app/build/intermediates/merged_res/debug/mergeDebugResources
+com.lumen.files.app-debug-5 /workspace/lumen-files/app/src/debug/res
+com.lumen.files.app-main-6 /workspace/lumen-files/app/src/main/res

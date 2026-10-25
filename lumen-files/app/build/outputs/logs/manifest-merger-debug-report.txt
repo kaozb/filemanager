@@ -1,0 +1,107 @@
+-- Merging decision tree log ---
+manifest
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:2:1-49:12
+INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:2:1-49:12
+INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:2:1-49:12
+INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:2:1-49:12
+	package
+		INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml
+	android:versionName
+		INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml
+	android:versionCode
+		INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml
+	xmlns:android
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:2:11-69
+uses-permission#android.permission.INTERNET
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:4:5-67
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:4:22-64
+uses-permission#android.permission.ACCESS_NETWORK_STATE
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:5:5-79
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:5:22-76
+uses-permission#android.permission.MANAGE_EXTERNAL_STORAGE
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:6:5-82
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:6:22-79
+uses-permission#android.permission.READ_EXTERNAL_STORAGE
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:7:5-9:38
+	android:maxSdkVersion
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:9:9-35
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:8:9-64
+uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:10:5-12:38
+	android:maxSdkVersion
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:12:9-35
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:11:9-65
+application
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:14:5-47:19
+INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:14:5-47:19
+	android:extractNativeLibs
+		INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml
+	android:requestLegacyExternalStorage
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:18:9-52
+	android:supportsRtl
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:19:9-35
+	android:label
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:17:9-41
+	android:icon
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:16:9-43
+	android:allowBackup
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:15:9-35
+	android:theme
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:20:9-40
+	android:usesCleartextTraffic
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:21:9-44
+activity#com.lumen.files.LocationsActivity
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:23:9-30:20
+	android:exported
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:25:13-36
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:24:13-46
+intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:26:13-29:29
+action#android.intent.action.MAIN
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:27:17-69
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:27:25-66
+category#android.intent.category.LAUNCHER
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:28:17-77
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:28:27-74
+activity#com.lumen.files.BrowserActivity
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:32:9-35:40
+	android:exported
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:35:13-37
+	android:configChanges
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:34:13-74
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:33:13-44
+activity#com.lumen.files.SearchActivity
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:37:9-40:58
+	android:windowSoftInputMode
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:40:13-55
+	android:exported
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:39:13-37
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:38:13-43
+provider#com.lumen.files.FileContentProvider
+ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:42:9-46:50
+	android:grantUriPermissions
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:46:13-47
+	android:authorities
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:44:13-56
+	android:exported
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:45:13-37
+	android:name
+		ADDED from /workspace/lumen-files/app/src/main/AndroidManifest.xml:43:13-48
+uses-sdk
+INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml
+INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml
+	android:targetSdkVersion
+		INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml
+	android:minSdkVersion
+		INJECTED from /workspace/lumen-files/app/src/main/AndroidManifest.xml

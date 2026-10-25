@@ -1,5 +1,6 @@
 package com.lumen.files;
 
+import android.graphics.Color;
 import android.webkit.MimeTypeMap;
 
 import java.text.SimpleDateFormat;
@@ -14,6 +15,15 @@ public final class Format {
             new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
 
     private Format() {
+    }
+
+    /** 把前景色以指定比例混入底色（如 0.14 = 14% 前景），用于图标容器底色。 */
+    public static int blend(int foreground, int background, float ratio) {
+        float inverse = 1f - ratio;
+        int red = (int) (Color.red(foreground) * ratio + Color.red(background) * inverse);
+        int green = (int) (Color.green(foreground) * ratio + Color.green(background) * inverse);
+        int blue = (int) (Color.blue(foreground) * ratio + Color.blue(background) * inverse);
+        return Color.argb(255, red, green, blue);
     }
 
     public static String size(long bytes) {

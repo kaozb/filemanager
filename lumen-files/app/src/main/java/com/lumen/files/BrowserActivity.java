@@ -59,9 +59,11 @@ public final class BrowserActivity extends BaseActivity {
     private ListView listView;
     private FileAdapter adapter;
     private View loadingView;
-    private TextView emptyView;
+    private View emptyView;
+    private TextView emptyText;
     private View pasteBar;
     private TextView pasteText;
+    private TextView pasteSource;
 
     private Fs fs;
     private int serverId;
@@ -125,8 +127,10 @@ public final class BrowserActivity extends BaseActivity {
         listView = findViewById(R.id.list);
         loadingView = findViewById(R.id.loading);
         emptyView = findViewById(R.id.empty);
+        emptyText = emptyView.findViewById(R.id.emptyText);
         pasteBar = findViewById(R.id.pasteBar);
         pasteText = findViewById(R.id.pasteText);
+        pasteSource = findViewById(R.id.pasteSource);
         ImageButton fab = findViewById(R.id.fab);
         View pasteButton = findViewById(R.id.pasteBtn);
         ImageButton pasteClose = findViewById(R.id.pasteClose);
@@ -221,7 +225,7 @@ public final class BrowserActivity extends BaseActivity {
                 if (message != null) {
                     errorMessage = message;
                     adapter.setItems(new ArrayList<>());
-                    emptyView.setText("无法打开\n" + message);
+                    emptyText.setText("无法打开\n" + message);
                     emptyView.setVisibility(View.VISIBLE);
                     updateChrome();
                     return;
@@ -249,7 +253,7 @@ public final class BrowserActivity extends BaseActivity {
         Collections.sort(visible, comparator());
         adapter.setItems(visible);
         boolean empty = visible.isEmpty() && errorMessage == null;
-        emptyView.setText("这个文件夹是空的");
+        emptyText.setText("这个文件夹是空的");
         emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
     }
 
@@ -313,6 +317,9 @@ public final class BrowserActivity extends BaseActivity {
         if (active) {
             pasteText.setText((Clipboard.move() ? "已剪切 " : "已复制 ")
                     + Clipboard.items().size() + " 项");
+            String from = Clipboard.sourceParent();
+            pasteSource.setText(from == null ? "" : "来自 " + from);
+            pasteSource.setVisibility(from == null ? View.INVISIBLE : View.VISIBLE);
         }
     }
 

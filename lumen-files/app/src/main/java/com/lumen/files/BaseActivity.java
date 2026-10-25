@@ -40,6 +40,7 @@ public abstract class BaseActivity extends Activity {
         }
         toolbar.setTitleTextColor(textColor);
         toolbar.setSubtitleTextColor(secondaryColor);
+        toolbar.setTitleTextAppearance(this, R.style.ToolbarTitle);
         Drawable overflow = getDrawable(R.drawable.ic_more).mutate();
         overflow.setTint(textColor);
         toolbar.setOverflowIcon(overflow);

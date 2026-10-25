@@ -4,10 +4,12 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Environment;
 import android.view.LayoutInflater;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
@@ -29,6 +31,7 @@ import java.util.List;
 /**
  * 首页左右两栏中的一栏：独立的数据源、路径与列表。
  * 本地卷与 WebDAV 都走统一的 Fs，切换数据源不影响另一栏。
+ * 顶部 chip：点击切换数据源，长按弹出面板菜单；列表支持双指开合缩放行大小。
  */
 public final class PaneController {
 
@@ -46,11 +49,16 @@ public final class PaneController {
     private final View root;
     private final TextView sourceLabel;
     private final TextView pathLabel;
+    private final ImageView chipIcon;
     private final ListView listView;
     private final ProgressBar loadingView;
-    private final TextView emptyView;
+    private final View emptyView;
+    private final TextView emptyText;
     private final FileAdapter adapter;
     private final ArrayList<Entry> all = new ArrayList<>();
+    private final int accent;
+    private final int accent2;
+    private final ScaleGestureDetector scaleDetector;
 
     private Fs fs;
     private int serverId = -1;
@@ -70,22 +78,37 @@ public final class PaneController {
                 .inflate(R.layout.pane_file, (android.view.ViewGroup) container, false);
         ((android.view.ViewGroup) container).addView(root);
 
+        accent = activity.color(R.attr.lumenAccent);
+        accent2 = activity.color(R.attr.lumenAccent2);
+
+        View chip = root.findViewById(R.id.paneChip);
         sourceLabel = root.findViewById(R.id.paneSource);
+        chipIcon = root.findViewById(R.id.chipIcon);
         pathLabel = root.findViewById(R.id.panePath);
         listView = root.findViewById(R.id.paneList);
         loadingView = root.findViewById(R.id.paneLoading);
         emptyView = root.findViewById(R.id.paneEmpty);
+        emptyText = root.findViewById(R.id.paneEmptyText);
         ImageButton up = root.findViewById(R.id.paneUp);
-        ImageButton more = root.findViewById(R.id.paneMore);
 
         adapter = new FileAdapter(activity);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(this::onItemClick);
         listView.setOnItemLongClickListener(this::onItemLongClick);
 
-        sourceLabel.setOnClickListener(v -> host.onChooseSource(this));
+        chip.setOnClickListener(v -> host.onChooseSource(this));
+        chip.setOnLongClickListener(v -> {
+            showPaneMenu(chip);
+            return true;
+        });
         up.setOnClickListener(v -> goUp());
-        more.setOnClickListener(v -> showPaneMenu(more));
+
+        // 双指开合：实时缩放行，松手后持久化到全局偏好
+        scaleDetector = new ScaleGestureDetector(activity, new ScaleListener());
+        listView.setOnTouchListener((view, event) -> {
+            scaleDetector.onTouchEvent(event);
+            return scaleDetector.isInProgress();
+        });
 
         showHidden = Prefs.showHidden(activity);
         sortMode = Prefs.sortMode(activity);
@@ -133,7 +156,13 @@ public final class PaneController {
         showHidden = Prefs.showHidden(activity);
         sortMode = Prefs.sortMode(activity);
         sortAsc = Prefs.sortAsc(activity);
+        adapter.setRowScale(Prefs.rowScale(activity));
         applySort();
+    }
+
+    /** 设置面板修改行大小档位后，立即应用到本栏。 */
+    void applyRowScale() {
+        adapter.setRowScale(Prefs.rowScale(activity));
     }
 
     void setLocal(String target) {
@@ -181,7 +210,7 @@ public final class PaneController {
                 all.clear();
                 if (message != null) {
                     adapter.setItems(new ArrayList<>());
-                    emptyView.setText("无法打开\n" + message);
+                    emptyText.setText("无法打开\n" + message);
                     emptyView.setVisibility(View.VISIBLE);
                 } else {
                     if (result != null) {
@@ -205,7 +234,7 @@ public final class PaneController {
         adapter.setItems(visible);
         if (emptyView.getVisibility() != View.VISIBLE) {
             boolean empty = visible.isEmpty();
-            emptyView.setText(empty ? "这个文件夹是空的" : "");
+            emptyText.setText(empty ? "这个文件夹是空的" : "");
             emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
         }
     }
@@ -238,11 +267,11 @@ public final class PaneController {
     }
 
     private void updateChrome() {
-        String label = fs.isLocal()
-                ? StorageUtil.label(new File(rootPath))
-                : fs.label();
-        sourceLabel.setText(label + "  ▾");
-        pathLabel.setText(fs.isLocal() ? trimTrailing(path) : path);
+        boolean local = fs.isLocal();
+        sourceLabel.setText(local ? StorageUtil.label(new File(rootPath)) : fs.label());
+        chipIcon.setImageResource(local ? R.drawable.ic_folder : R.drawable.ic_cloud);
+        chipIcon.setColorFilter(local ? accent : accent2);
+        pathLabel.setText(local ? trimTrailing(path) : path);
     }
 
     private void goUp() {
@@ -459,6 +488,22 @@ public final class PaneController {
             activity.startActivity(Intent.createChooser(intent, "打开方式"));
         } catch (Exception error) {
             Bg.toast(activity, "没有可打开该文件的应用");
+        }
+    }
+
+    /** 双指捏合手势：缩放范围 0.7–1.7，与设置面板的档位共享同一持久化偏好。 */
+    private final class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+
+        @Override
+        public boolean onScale(ScaleGestureDetector detector) {
+            float next = adapter.rowScale() * detector.getScaleFactor();
+            adapter.setRowScale(Math.max(0.7f, Math.min(1.7f, next)));
+            return true;
+        }
+
+        @Override
+        public void onScaleEnd(ScaleGestureDetector detector) {
+            Prefs.setRowScalePercent(activity, Math.round(adapter.rowScale() * 100));
         }
     }
 
