@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/ic_search"
+        android:showAsAction="always"
+        android:title="@string/menu_search" />
+    <item
+        android:id="@+id/action_new_folder"
+        android:icon="@drawable/ic_folder_add"
+        android:title="@string/menu_new_folder" />
+    <item
+        android:id="@+id/action_new_file"
+        android:icon="@drawable/ic_file_add"
+        android:title="@string/menu_new_file" />
+    <item
+        android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort"
+        android:title="@string/menu_sort" />
+    <item
+        android:id="@+id/action_hidden"
+        android:checkable="true"
+        android:icon="@drawable/ic_eye"
+        android:title="@string/menu_hidden" />
+    <item
+        android:id="@+id/action_refresh"
+        android:icon="@drawable/ic_refresh"
+        android:title="@string/menu_refresh" />
+    <item
+        android:id="@+id/action_import"
+        android:icon="@drawable/ic_upload"
+        android:title="@string/menu_import" />
+    <item
+        android:id="@+id/action_select_all"
+        android:icon="@drawable/ic_select_all"
+        android:title="@string/menu_select_all" />
+</menu>
