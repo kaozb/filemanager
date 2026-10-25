@@ -2,7 +2,6 @@ package com.lumen.files;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.TextUtils;
@@ -12,7 +11,6 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toolbar;
@@ -24,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * 首页：两个文件面板（本地 / WebDAV 独立切换），左右滑动跟手切换面板；
@@ -44,8 +41,6 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     private PaneController selectionPane;
 
     // 悬浮设置面板内的视图（打开时绑定，关闭时置空）
-    private TextView storageSummary;
-    private ProgressBar storageBar;
     private View permissionCard;
     private LinearLayout sourceTiles;
     private TextView rowSizeValue;
@@ -321,14 +316,14 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             window.setGravity(Gravity.BOTTOM);
         }
 
-        storageSummary = sheet.findViewById(R.id.storageSummary);
-        storageBar = sheet.findViewById(R.id.storageBar);
         permissionCard = sheet.findViewById(R.id.permissionCard);
         sourceTiles = sheet.findViewById(R.id.sourceTiles);
         rowSizeValue = sheet.findViewById(R.id.rowSizeValue);
         sortValue = sheet.findViewById(R.id.sortValue);
 
         sheet.findViewById(R.id.sheetClose).setOnClickListener(v -> dialog.dismiss());
+        sheet.findViewById(R.id.addServerBtn).setOnClickListener(v ->
+                showServerDialog(null));
         sheet.findViewById(R.id.grantBtn).setOnClickListener(v ->
                 StorageUtil.requestAccess(this));
 
@@ -352,8 +347,6 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         sortValue.setText(sortLabel());
 
         dialog.setOnDismissListener(d -> {
-            storageSummary = null;
-            storageBar = null;
             permissionCard = null;
             sourceTiles = null;
             rowSizeValue = null;
@@ -365,19 +358,11 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     }
 
     private void renderSettings() {
-        if (storageSummary == null) {
+        if (permissionCard == null) {
             return;
         }
         boolean granted = StorageUtil.hasAccess(this);
         permissionCard.setVisibility(granted ? View.GONE : View.VISIBLE);
-
-        long[] usage = StorageUtil.usage(Environment.getExternalStorageDirectory());
-        storageSummary.setText(String.format(Locale.US, "可用 %s / 共 %s",
-                Format.size(usage[1]), Format.size(usage[0])));
-        if (usage[0] > 0) {
-            long used = usage[0] - usage[1];
-            storageBar.setProgress((int) Math.min(1000, used * 1000 / usage[0]));
-        }
 
         renderSourceTiles();
     }
@@ -457,20 +442,6 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             }
             sourceTiles.addView(row);
         }
-
-        TextView add = new TextView(this);
-        add.setText("＋ 添加服务器");
-        add.setTextSize(12.5f);
-        add.setTypeface(Typeface.DEFAULT_BOLD);
-        add.setTextColor(accent);
-        add.setGravity(Gravity.CENTER);
-        add.setBackgroundResource(R.drawable.bg_add_server);
-        LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(44));
-        addParams.topMargin = dp(8);
-        add.setLayoutParams(addParams);
-        add.setOnClickListener(v -> showServerDialog(null));
-        sourceTiles.addView(add);
     }
 
     // ------------------------------------------------------------------ 行大小 / 排序

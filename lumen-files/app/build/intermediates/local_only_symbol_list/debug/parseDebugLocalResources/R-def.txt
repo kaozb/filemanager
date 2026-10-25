@@ -123,6 +123,7 @@ id action_search
 id action_select_all
 id action_settings
 id action_sort
+id addServerBtn
 id back
 id bar
 id check
@@ -175,8 +176,6 @@ id sheetScroll
 id sortRow
 id sortValue
 id sourceTiles
-id storageBar
-id storageSummary
 id subtitle
 id title
 id toolbar
