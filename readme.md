@@ -39,8 +39,8 @@ gradle assembleDebug
 # 2. 对齐
 zipalign -f 4 app/build/outputs/apk/debug/app-debug.apk aligned.apk
 
-# 3. 签名（密钥库 build/lumen.jks，密码 lumen123）
-apksigner sign --ks build/lumen.jks --ks-pass pass:lumen123 --out LumenFiles.apk aligned.apk
+# 3. 签名（密钥库 keystore/mibo.jks，别名 mibo，密码 mibo）
+apksigner sign --ks keystore/mibo.jks --ks-key-alias mibo --ks-pass pass:mibo --key-pass pass:mibo --out LumenFiles.apk aligned.apk
 
 # 4. 验证
 apksigner verify --print-certs LumenFiles.apk
@@ -60,7 +60,7 @@ gradle assembleRelease
    GRADLE_OPTS="-Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=18080 -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=18080" gradle assembleDebug
    ```
    sdkmanager 同理需加 `--proxy=http --proxy_host=127.0.0.1 --proxy_port=18080`。
-2. **签名一致性**：覆盖安装必须使用同一密钥库 `build/lumen.jks`，更换签名会导致安装失败（需先卸载）。
+2. **签名一致性**：覆盖安装必须使用同一密钥库 `keystore/mibo.jks`（别名 `mibo`），更换签名会导致安装失败（需先卸载）。注意：与旧版 `build/lumen.jks` 签名不兼容，从旧版升级需先卸载。
 3. **首启权限**：targetSdk 34 下存储权限需动态申请，旧版荣耀/鸿蒙设备有专门的授权引导分支，改动 `StorageUtil` 时注意回归。
 4. **无第三方依赖**：刻意不引入 AndroidX/Kotlin，新增功能请使用平台 API，勿随手添加依赖。
 5. **浅克隆**：如本地历史被裁剪（`rev-list --count main` 偏小），先 `git fetch origin main --depth=50` 再操作。
