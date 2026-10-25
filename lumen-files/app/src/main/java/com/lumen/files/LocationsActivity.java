@@ -1,5 +1,6 @@
 package com.lumen.files;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
@@ -95,6 +96,18 @@ public final class LocationsActivity extends BaseActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 77 && Build.VERSION.SDK_INT >= 23 && Build.VERSION.SDK_INT < 30
+                && !StorageUtil.hasAccess(this)
+                && !shouldShowRequestPermissionRationale(
+                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            new AlertDialog.Builder(this)
+                    .setTitle("需要存储权限")
+                    .setMessage("权限已被拒绝。请到应用设置中手动开启“存储”权限后重试。")
+                    .setNegativeButton("取消", null)
+                    .setPositiveButton("应用设置", (dialog, which) ->
+                            StorageUtil.openAppDetails(this))
+                    .show();
+        }
         render();
     }
 
