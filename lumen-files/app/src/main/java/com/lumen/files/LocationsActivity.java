@@ -53,6 +53,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_locations);
+        // 应用被打开：清理上次遗留的 WebDAV 打开缓存
+        cleanOpenCache();
 
         toolbar = findViewById(R.id.toolbar);
         styleToolbar(toolbar);
@@ -365,6 +367,29 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         permissionCard.setVisibility(granted ? View.GONE : View.VISIBLE);
 
         renderSourceTiles();
+    }
+
+    /**
+     * 启动时清空 cache/open（WebDAV 文件「打开」时的临时下载）
+     * 与可能残留的 preview_* 预览临时文件。
+     */
+    private void cleanOpenCache() {
+        Bg.pool().execute(() -> {
+            File[] opened = new File(getCacheDir(), "open").listFiles();
+            if (opened != null) {
+                for (File file : opened) {
+                    file.delete();
+                }
+            }
+            File[] cached = getCacheDir().listFiles();
+            if (cached != null) {
+                for (File file : cached) {
+                    if (file.getName().startsWith("preview_")) {
+                        file.delete();
+                    }
+                }
+            }
+        });
     }
 
     @SuppressWarnings("deprecation")
