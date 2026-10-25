@@ -101,11 +101,11 @@ drawable ic_refresh
 drawable ic_search
 drawable ic_select_all
 drawable ic_server
+drawable ic_settings
 drawable ic_share
 drawable ic_shield
 drawable ic_sort
 drawable ic_storage
-drawable ic_switch
 drawable ic_text
 drawable ic_theme
 drawable ic_unzip
@@ -120,8 +120,8 @@ id action_new_folder
 id action_refresh
 id action_search
 id action_select_all
+id action_settings
 id action_sort
-id action_switch
 id addServerBtn
 id back
 id bar
@@ -134,7 +134,6 @@ id dotSecond
 id empty
 id emptyText
 id fab
-id gestureBar
 id grantBtn
 id hint
 id icon
@@ -172,9 +171,12 @@ id selectionDelete
 id selectionMove
 id selectionZip
 id serversBox
+id sheetClose
 id sheetScroll
 id sortRow
 id sortValue
+id sourceRow
+id sourceValue
 id storageBar
 id storageSummary
 id subtitle
@@ -208,9 +210,9 @@ string menu_refresh
 string menu_rename
 string menu_search
 string menu_select_all
+string menu_settings
 string menu_share
 string menu_sort
-string menu_switch
 string menu_unzip
 string menu_upload
 string menu_zip

@@ -37,8 +37,6 @@ public final class PaneController {
     public interface Host {
         void onChooseSource(PaneController pane);
 
-        void onOpenSettings();
-
         /** 面板导航状态变化（进入/返回目录、切换数据源），Host 据此刷新顶栏。 */
         void onPaneChanged(PaneController pane);
 
@@ -142,6 +140,11 @@ public final class PaneController {
 
     int serverId() {
         return serverId;
+    }
+
+    /** 设置面板「切换数据源」行显示的当前源名称。 */
+    String sourceLabel() {
+        return fs.isLocal() ? StorageUtil.label(new File(rootPath)) : fs.label();
     }
 
     /** 顶栏标题：显示存储器内的目录（相对路径），根目录时只显示存储对象名称。 */
@@ -349,7 +352,7 @@ public final class PaneController {
 
     /** 面板菜单：宿主在长按顶栏标题时弹出。 */
     void showPaneMenu() {
-        final String[] options = {"切换数据源", "新建文件夹", "刷新", "在完整页面打开", "WebDAV 设置"};
+        final String[] options = {"切换数据源", "新建文件夹", "刷新", "在完整页面打开"};
         activity.showActionSheet(title(), options, -1, which -> {
             String option = options[which];
             if ("切换数据源".equals(option)) {
@@ -358,10 +361,8 @@ public final class PaneController {
                 newFolder();
             } else if ("刷新".equals(option)) {
                 reload();
-            } else if ("在完整页面打开".equals(option)) {
-                openFull();
             } else {
-                host.onOpenSettings();
+                openFull();
             }
         });
     }

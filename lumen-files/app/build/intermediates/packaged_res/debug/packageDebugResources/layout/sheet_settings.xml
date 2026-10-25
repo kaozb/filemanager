@@ -39,9 +39,15 @@
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
-            <Space
+            <ImageButton
+                android:id="@+id/sheetClose"
                 android:layout_width="34dp"
-                android:layout_height="34dp" />
+                android:layout_height="34dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="关闭"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_close"
+                android:tint="?attr/lumenSecondary" />
 
         </LinearLayout>
 
@@ -205,6 +211,34 @@
             android:text="偏好" />
 
         <LinearLayout
+            android:id="@+id/sourceRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="11dp"
+            android:paddingBottom="11dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="切换当前面板的数据源"
+                android:textColor="?attr/lumenText"
+                android:textSize="13.5sp" />
+
+            <TextView
+                android:id="@+id/sourceValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="4dp"
+                android:textColor="?attr/lumenSecondary"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -315,7 +349,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="提示：在设置面板内下拉可关闭；在文件列表上双指开合，可以快速缩放列表行大小"
+            android:text="提示：在文件列表上双指开合，可以快速缩放列表行大小"
             android:textColor="?attr/lumenSecondary"
             android:textSize="10.5sp" />
 
