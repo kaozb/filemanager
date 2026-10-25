@@ -39,15 +39,9 @@
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
-            <ImageButton
-                android:id="@+id/sheetClose"
+            <Space
                 android:layout_width="34dp"
-                android:layout_height="34dp"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
-                android:contentDescription="关闭"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_close"
-                android:tint="?attr/lumenSecondary" />
+                android:layout_height="34dp" />
 
         </LinearLayout>
 
@@ -321,7 +315,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="提示：在文件列表上双指开合，可以快速缩放列表行大小"
+            android:text="提示：在设置面板内下拉可关闭；在文件列表上双指开合，可以快速缩放列表行大小"
             android:textColor="?attr/lumenSecondary"
             android:textSize="10.5sp" />
 

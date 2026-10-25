@@ -22,10 +22,11 @@
 
     </android.widget.Toolbar>
 
-    <!-- 面板指示点：左右滑动切换两个面板 -->
+    <!-- 面板指示点：左右滑动切换两个面板；上滑此区域打开设置 -->
     <LinearLayout
+        android:id="@+id/gestureBar"
         android:layout_width="match_parent"
-        android:layout_height="14dp"
+        android:layout_height="24dp"
         android:background="?attr/lumenSurface"
         android:gravity="center"
         android:orientation="horizontal">

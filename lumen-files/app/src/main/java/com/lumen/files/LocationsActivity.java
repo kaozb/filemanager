@@ -6,8 +6,10 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewConfiguration;
 import android.view.Window;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -64,8 +66,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         toolbar.inflateMenu(R.menu.menu_locations);
         tintMenu(toolbar.getMenu());
         toolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.action_settings) {
-                showSettingsSheet();
+            if (item.getItemId() == R.id.action_switch) {
+                onChooseSource(currentPane());
                 return true;
             }
             return false;
@@ -121,6 +123,8 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         });
         // 路径节之外的区域：点按切换数据源，长按弹面板菜单
         bindToolbarGestures();
+        // 底部手势条：上滑打开设置面板
+        bindSettingsGesture();
 
         pager = findViewById(R.id.pager);
         dotFirst = findViewById(R.id.dotFirst);
@@ -234,6 +238,33 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         });
     }
 
+    /** 底部手势条：向上滑动即打开设置面板。 */
+    private void bindSettingsGesture() {
+        View bar = findViewById(R.id.gestureBar);
+        final float[] down = new float[2];
+        final boolean[] triggered = {false};
+        bar.setOnTouchListener((v, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    down[0] = event.getX();
+                    down[1] = event.getY();
+                    triggered[0] = false;
+                    return true;
+                case MotionEvent.ACTION_MOVE: {
+                    float up = down[1] - event.getY();
+                    float sideways = Math.abs(event.getX() - down[0]);
+                    if (!triggered[0] && up > dp(48) && up > sideways * 1.5f) {
+                        triggered[0] = true;
+                        showSettingsSheet();
+                    }
+                    return true;
+                }
+                default:
+                    return true;
+            }
+        });
+    }
+
     /** 面板进入/退出多选时，顶栏在路径导航与操作栏之间切换。 */
     @Override
     public void onSelectionChanged(PaneController pane) {
@@ -243,13 +274,13 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             selectionBar.setVisibility(View.VISIBLE);
             toolbar.setOnClickListener(null);
             toolbar.setOnLongClickListener(null);
-            toolbar.getMenu().findItem(R.id.action_settings).setVisible(false);
+            toolbar.getMenu().findItem(R.id.action_switch).setVisible(false);
         } else if (selectionPane == pane) {
             selectionPane = null;
             selectionBar.setVisibility(View.GONE);
             crumb.setVisibility(View.VISIBLE);
             bindToolbarGestures();
-            toolbar.getMenu().findItem(R.id.action_settings).setVisible(true);
+            toolbar.getMenu().findItem(R.id.action_switch).setVisible(true);
         }
         refreshSelectionBar();
     }
@@ -332,7 +363,51 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         rowSizeValue = sheet.findViewById(R.id.rowSizeValue);
         sortValue = sheet.findViewById(R.id.sortValue);
 
-        sheet.findViewById(R.id.sheetClose).setOnClickListener(v -> dialog.dismiss());
+        // 在面板任意位置按住下拉即可关闭：列表在顶部且向下拖动时接管手势
+        final int slop = ViewConfiguration.get(this).getScaledTouchSlop();
+        final float[] down = new float[2];
+        final boolean[] dragging = {false};
+        sheet.setOnTouchListener((v, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    down[0] = event.getRawY();
+                    down[1] = event.getRawX();
+                    dragging[0] = false;
+                    return false;
+                case MotionEvent.ACTION_MOVE: {
+                    float dy = event.getRawY() - down[0];
+                    float dx = event.getRawX() - down[1];
+                    if (!dragging[0] && dy > slop && dy > Math.abs(dx)
+                            && ((android.widget.ScrollView) sheet).getScrollY() <= 0) {
+                        dragging[0] = true;
+                    }
+                    if (dragging[0]) {
+                        sheet.setTranslationY(Math.max(0f, dy - slop));
+                        return true;
+                    }
+                    return false;
+                }
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL: {
+                    if (!dragging[0]) {
+                        return false;
+                    }
+                    dragging[0] = false;
+                    if (sheet.getTranslationY() > dp(110)) {
+                        sheet.animate().translationY(sheet.getHeight())
+                                .alpha(0f).setDuration(160)
+                                .withEndAction(dialog::dismiss).start();
+                    } else {
+                        sheet.animate().translationY(0f).alpha(1f)
+                                .setDuration(160).start();
+                    }
+                    return true;
+                }
+                default:
+                    return false;
+            }
+        });
+
         sheet.findViewById(R.id.grantBtn).setOnClickListener(v ->
                 StorageUtil.requestAccess(this));
         sheet.findViewById(R.id.addServerBtn).setOnClickListener(v ->

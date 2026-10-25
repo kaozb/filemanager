@@ -64,9 +64,9 @@
     <string name="menu_rename">重命名</string>
     <string name="menu_search">搜索</string>
     <string name="menu_select_all">全选</string>
-    <string name="menu_settings">设置</string>
     <string name="menu_share">分享</string>
     <string name="menu_sort">排序方式</string>
+    <string name="menu_switch">切换</string>
     <string name="menu_unzip">解压</string>
     <string name="menu_upload">上传文件</string>
     <string name="menu_zip">压缩</string>

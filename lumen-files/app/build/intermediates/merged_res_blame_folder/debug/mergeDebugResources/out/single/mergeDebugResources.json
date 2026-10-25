@@ -244,10 +244,6 @@
         "source": "com.lumen.files.app-main-6:/layout/activity_browser.xml"
     },
     {
-        "merged": "com.lumen.files.app-debug-4:/drawable_ic_settings.xml.flat",
-        "source": "com.lumen.files.app-main-6:/drawable/ic_settings.xml"
-    },
-    {
         "merged": "com.lumen.files.app-debug-4:/drawable_toggle_thumb.xml.flat",
         "source": "com.lumen.files.app-main-6:/drawable/toggle_thumb.xml"
     },
@@ -298,6 +294,10 @@
     {
         "merged": "com.lumen.files.app-debug-4:/drawable_ic_cut.xml.flat",
         "source": "com.lumen.files.app-main-6:/drawable/ic_cut.xml"
+    },
+    {
+        "merged": "com.lumen.files.app-debug-4:/drawable_ic_switch.xml.flat",
+        "source": "com.lumen.files.app-main-6:/drawable/ic_switch.xml"
     },
     {
         "merged": "com.lumen.files.app-debug-4:/drawable_ic_add.xml.flat",
