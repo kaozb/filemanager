@@ -586,12 +586,12 @@ public final class PaneController {
     }
 
     private void renameDialog(final Entry entry) {
-        final EditText input = (EditText) LayoutInflater.from(activity)
-                .inflate(R.layout.dialog_input, null).findViewById(R.id.input);
+        View form = LayoutInflater.from(activity).inflate(R.layout.dialog_input, null);
+        final EditText input = form.findViewById(R.id.input);
         input.setText(entry.name);
         AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setTitle("重命名")
-                .setView(input)
+                .setView(form)
                 .setNegativeButton("取消", null)
                 .setPositiveButton("确定", null)
                 .create();
