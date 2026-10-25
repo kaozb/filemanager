@@ -134,3 +134,15 @@ ERROR        | Failed to find ColorBuffer: 250
 ERROR        | Failed to bind to texture: invalid color buffer.
 ERROR        | Failed to find ColorBuffer: 259
 ERROR        | Failed to bind to texture: invalid color buffer.
+ERROR        | Failed to find ColorBuffer: 267
+ERROR        | Failed to bind to texture: invalid color buffer.
+ERROR        | Failed to find ColorBuffer: 314
+ERROR        | Failed to bind to texture: invalid color buffer.
+ERROR        | Failed to find ColorBuffer: 324
+ERROR        | Failed to bind to texture: invalid color buffer.
+ERROR        | Failed to find ColorBuffer: 362
+ERROR        | Failed to bind to texture: invalid color buffer.
+ERROR        | Failed to find ColorBuffer: 394
+ERROR        | Failed to bind to texture: invalid color buffer.
+ERROR        | Failed to find ColorBuffer: 413
+ERROR        | Failed to bind to texture: invalid color buffer.
