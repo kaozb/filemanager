@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">流光文件</string>
+
+    <string name="menu_search">搜索</string>
+    <string name="menu_new_folder">新建文件夹</string>
+    <string name="menu_new_file">新建文件</string>
+    <string name="menu_sort">排序方式</string>
+    <string name="menu_hidden">显示隐藏文件</string>
+    <string name="menu_refresh">刷新</string>
+    <string name="menu_import">导入文件</string>
+    <string name="menu_upload">上传文件</string>
+    <string name="menu_select_all">全选</string>
+
+    <string name="menu_copy">复制</string>
+    <string name="menu_cut">剪切</string>
+    <string name="menu_rename">重命名</string>
+    <string name="menu_delete">删除</string>
+    <string name="menu_share">分享</string>
+    <string name="menu_info">详情</string>
+    <string name="menu_zip">压缩</string>
+    <string name="menu_unzip">解压</string>
+
+    <string name="menu_theme">切换主题</string>
+    <string name="menu_permission">文件访问权限</string>
+    <string name="menu_about">关于</string>
+</resources>

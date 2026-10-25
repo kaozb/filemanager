@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="lumenBg" format="color" />
+    <attr name="lumenSurface" format="color" />
+    <attr name="lumenCard" format="color" />
+    <attr name="lumenText" format="color" />
+    <attr name="lumenSecondary" format="color" />
+    <attr name="lumenDivider" format="color" />
+    <attr name="lumenAccent" format="color" />
+    <attr name="lumenAccent2" format="color" />
+    <attr name="lumenRipple" format="color" />
+</resources>

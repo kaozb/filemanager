@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 深色主题 -->
+    <color name="dark_bg">#0A111E</color>
+    <color name="dark_surface">#101A2B</color>
+    <color name="dark_card">#141F33</color>
+    <color name="dark_text">#E8EEF8</color>
+    <color name="dark_secondary">#8CA0BC</color>
+    <color name="dark_divider">#1E2B42</color>
+    <color name="dark_accent">#43C6B0</color>
+    <color name="dark_accent2">#6F8DFF</color>
+    <color name="dark_status">#070D17</color>
+    <color name="dark_ripple">#2EFFFFFF</color>
+
+    <!-- 浅色主题 -->
+    <color name="light_bg">#F3F6FB</color>
+    <color name="light_surface">#FFFFFF</color>
+    <color name="light_card">#FFFFFF</color>
+    <color name="light_text">#0E1B2E</color>
+    <color name="light_secondary">#5E708A</color>
+    <color name="light_divider">#E3EAF4</color>
+    <color name="light_accent">#0E7C6F</color>
+    <color name="light_accent2">#4B63DD</color>
+    <color name="light_status">#0B3F3A</color>
+    <color name="light_ripple">#1F000000</color>
+
+    <!-- 文件类型配色 -->
+    <color name="type_image">#57A7FF</color>
+    <color name="type_video">#B083FF</color>
+    <color name="type_audio">#FF7AA8</color>
+    <color name="type_archive">#FFB35C</color>
+    <color name="type_apk">#48CF8A</color>
+    <color name="type_doc">#5BB3FF</color>
+    <color name="type_code">#4FD1C5</color>
+    <color name="type_text">#93A4BD</color>
+
+    <color name="launcher_bg">#0B1220</color>
+</resources>
