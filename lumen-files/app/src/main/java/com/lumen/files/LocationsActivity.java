@@ -315,7 +315,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
         List<File> roots = StorageUtil.roots();
         for (final File root : roots) {
-            labels.add(StorageUtil.label(root) + " · " + root.getAbsolutePath());
+            labels.add(StorageUtil.label(root));
             actions.add(() -> pane.setLocal(root.getAbsolutePath()));
         }
         if (roots.isEmpty()) {
@@ -323,7 +323,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             actions.add(() -> StorageUtil.requestAccess(this));
         }
         for (final Server server : Prefs.servers(this)) {
-            labels.add("WebDAV · " + server.name + " · " + server.url);
+            labels.add(server.name);
             actions.add(() -> pane.setServer(server));
         }
         labels.add("＋ 添加 WebDAV 服务器");
