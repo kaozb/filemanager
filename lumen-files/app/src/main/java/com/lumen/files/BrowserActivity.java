@@ -12,7 +12,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.OpenableColumns;
-import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -56,7 +55,9 @@ public final class BrowserActivity extends BaseActivity {
     private static final int REQ_PICK = 41;
 
     private Toolbar toolbar;
+    private CrumbBar crumb;
     private ListView listView;
+    private PullRefreshLayout refreshLayout;
     private FileAdapter adapter;
     private View loadingView;
     private View emptyView;
@@ -78,7 +79,8 @@ public final class BrowserActivity extends BaseActivity {
 
     private final ArrayList<Entry> all = new ArrayList<>();
     private int loadGeneration;
-    private ActionMode actionMode;
+    private SelectionBar selectionBar;
+    private boolean selecting;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,17 +116,16 @@ public final class BrowserActivity extends BaseActivity {
 
         toolbar = findViewById(R.id.toolbar);
         styleToolbar(toolbar);
-        toolbar.setNavigationIcon(R.drawable.ic_back);
-        Drawable navigation = toolbar.getNavigationIcon();
-        if (navigation != null) {
-            navigation.mutate().setTint(textColor);
-        }
-        toolbar.setNavigationOnClickListener(v -> goUp());
+        toolbar.setTitle(null);
         toolbar.inflateMenu(R.menu.menu_browser);
         tintMenu(toolbar.getMenu());
         toolbar.setOnMenuItemClickListener(this::onMenuSelected);
 
+        crumb = findViewById(R.id.crumb);
+
         listView = findViewById(R.id.list);
+        refreshLayout = findViewById(R.id.refresh);
+        refreshLayout.setOnRefreshListener(() -> load(path, true));
         loadingView = findViewById(R.id.loading);
         emptyView = findViewById(R.id.empty);
         emptyText = emptyView.findViewById(R.id.emptyText);
@@ -135,12 +136,63 @@ public final class BrowserActivity extends BaseActivity {
         View pasteButton = findViewById(R.id.pasteBtn);
         ImageButton pasteClose = findViewById(R.id.pasteClose);
 
+        selectionBar = findViewById(R.id.selectionBar);
+        selectionBar.setCallback(new SelectionBar.Callback() {
+            @Override
+            public void onSelectAll() {
+                toggleSelectAll();
+            }
+
+            @Override
+            public void onCopy() {
+                List<Entry> selected = selectedEntries();
+                if (selected.isEmpty()) {
+                    return;
+                }
+                Clipboard.set(fs, selected, false);
+                exitSelection();
+                updatePasteBar();
+                Bg.toast(BrowserActivity.this, "已复制 " + selected.size() + " 项");
+            }
+
+            @Override
+            public void onMove() {
+                List<Entry> selected = selectedEntries();
+                if (selected.isEmpty()) {
+                    return;
+                }
+                Clipboard.set(fs, selected, true);
+                exitSelection();
+                updatePasteBar();
+                Bg.toast(BrowserActivity.this, "已剪切 " + selected.size() + " 项");
+            }
+
+            @Override
+            public void onZip() {
+                zipSelected(selectedEntries());
+            }
+
+            @Override
+            public void onDelete() {
+                List<Entry> selected = selectedEntries();
+                if (selected.isEmpty()) {
+                    return;
+                }
+                confirmDelete(selected);
+            }
+
+            @Override
+            public void onClose() {
+                exitSelection();
+            }
+        });
+
         adapter = new FileAdapter(this);
         listView.setAdapter(adapter);
-        listView.setChoiceMode(ListView.CHOICE_MODE_NONE);
         listView.setOnItemClickListener((parent, view, position, id) -> {
-            if (actionMode != null) {
-                toggleSelection(position);
+            if (selecting) {
+                adapter.toggle(adapter.getItem(position));
+                updateSelectionBar();
                 return;
             }
             Entry entry = adapter.getItem(position);
@@ -151,11 +203,8 @@ public final class BrowserActivity extends BaseActivity {
             }
         });
         listView.setOnItemLongClickListener((parent, view, position, id) -> {
-            if (actionMode == null) {
-                enterSelection(position);
-            } else {
-                listView.setItemChecked(position, true);
-                updateSelectionTitle();
+            if (!selecting) {
+                showItemMenu(adapter.getItem(position), position);
             }
             return true;
         });
@@ -186,8 +235,8 @@ public final class BrowserActivity extends BaseActivity {
 
     @Override
     public void onBackPressed() {
-        if (actionMode != null) {
-            actionMode.finish();
+        if (selecting) {
+            exitSelection();
             return;
         }
         goUp();
@@ -202,7 +251,15 @@ public final class BrowserActivity extends BaseActivity {
     }
 
     private void load(final String target) {
+        load(target, false);
+    }
+
+    /** keepPosition=true 时刷新当前目录不回滚到顶部。 */
+    private void load(final String target, final boolean keepPosition) {
         final int generation = ++loadGeneration;
+        if (selecting) {
+            exitSelection();
+        }
         loadingView.setVisibility(View.VISIBLE);
         emptyView.setVisibility(View.GONE);
         Bg.pool().execute(() -> {
@@ -219,6 +276,7 @@ public final class BrowserActivity extends BaseActivity {
                 if (generation != loadGeneration || isFinishing()) {
                     return;
                 }
+                refreshLayout.setRefreshing(false);
                 loadingView.setVisibility(View.GONE);
                 path = target;
                 all.clear();
@@ -236,7 +294,7 @@ public final class BrowserActivity extends BaseActivity {
                 }
                 applySort();
                 updateChrome();
-                if (adapter.getCount() > 0) {
+                if (!keepPosition && adapter.getCount() > 0) {
                     listView.setSelection(0);
                 }
             });
@@ -285,10 +343,31 @@ public final class BrowserActivity extends BaseActivity {
     }
 
     private void updateChrome() {
-        toolbar.setTitle(folderName());
-        toolbar.setSubtitle(prettyPath());
+        toolbar.setTitle(null);
+        toolbar.setSubtitle(null);
+        crumb.setSegments(crumbSegments(), target -> load(target));
         updatePasteBar();
         updateMenuState();
+    }
+
+    /** 从存储根到当前目录的路径节，每节可点击跳转。 */
+    private List<CrumbBar.Segment> crumbSegments() {
+        ArrayList<CrumbBar.Segment> segments = new ArrayList<>();
+        String base = trimTrailing(startRoot);
+        String rootLabel = fs.isLocal() ? StorageUtil.label(new File(startRoot)) : fs.label();
+        segments.add(new CrumbBar.Segment(rootLabel, startRoot));
+        String current = trimTrailing(path);
+        if (!current.equals(base)) {
+            String rest = current.startsWith(base) ? current.substring(base.length()) : current;
+            for (String part : rest.split("/")) {
+                if (part.isEmpty()) {
+                    continue;
+                }
+                segments.add(new CrumbBar.Segment(part,
+                        fs.child(segments.get(segments.size() - 1).path, part)));
+            }
+        }
+        return segments;
     }
 
     private String folderName() {
@@ -301,14 +380,6 @@ public final class BrowserActivity extends BaseActivity {
         String value = trimTrailing(path);
         int slash = value.lastIndexOf('/');
         return slash >= 0 ? value.substring(slash + 1) : value;
-    }
-
-    private String prettyPath() {
-        String value = trimTrailing(path);
-        if (value.isEmpty() || "/".equals(value)) {
-            return fs.isLocal() ? "/" : fs.label();
-        }
-        return fs.isLocal() ? value : fs.label() + value;
     }
 
     private void updatePasteBar() {
@@ -366,7 +437,7 @@ public final class BrowserActivity extends BaseActivity {
             return true;
         }
         if (id == R.id.action_refresh) {
-            load(path);
+            load(path, true);
             return true;
         }
         if (id == R.id.action_import) {
@@ -374,7 +445,10 @@ public final class BrowserActivity extends BaseActivity {
             return true;
         }
         if (id == R.id.action_select_all) {
-            selectAll();
+            if (!selecting) {
+                enterSelection();
+            }
+            toggleSelectAll();
             return true;
         }
         return false;
@@ -558,149 +632,80 @@ public final class BrowserActivity extends BaseActivity {
 
     // ------------------------------------------------------------------ 选择模式
 
-    private void enterSelection(int position) {
-        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-        listView.setItemChecked(position, true);
-        actionMode = startActionMode(new SelectionCallback());
-        if (actionMode != null) {
-            actionMode.setTitle(selectedEntries().size() + " 项");
-        }
+    /** 长按文件/文件夹弹出的居中菜单，选项保持简约。 */
+    private void showItemMenu(final Entry entry, final int position) {
+        final String[] options = {"多选", "重命名", "复制", "剪切", "删除"};
+        showCenterMenu(entry.name, options, 4, which -> {
+            if (which == 0) {
+                enterSelection();
+            } else if (which == 1) {
+                rename(entry);
+            } else if (which == 2) {
+                Clipboard.set(fs, Collections.singletonList(entry), false);
+                updatePasteBar();
+                Bg.toast(this, "已复制 1 项");
+            } else if (which == 3) {
+                Clipboard.set(fs, Collections.singletonList(entry), true);
+                updatePasteBar();
+                Bg.toast(this, "已剪切 1 项");
+            } else {
+                confirmDelete(Collections.singletonList(entry));
+            }
+        });
     }
 
-    private void toggleSelection(int position) {
-        listView.setItemChecked(position, !listView.isItemChecked(position));
-        if (actionMode == null) {
+    private void enterSelection() {
+        if (selecting) {
             return;
         }
-        int count = selectedEntries().size();
-        if (count == 0) {
-            actionMode.finish();
+        selecting = true;
+        adapter.setSelecting(true);
+        crumb.setVisibility(View.GONE);
+        selectionBar.setVisibility(View.VISIBLE);
+        setMenuVisible(false);
+        updateSelectionBar();
+    }
+
+    private void exitSelection() {
+        if (!selecting) {
+            return;
+        }
+        selecting = false;
+        adapter.setSelecting(false);
+        selectionBar.setVisibility(View.GONE);
+        crumb.setVisibility(View.VISIBLE);
+        setMenuVisible(true);
+        updateMenuState();
+    }
+
+    private void toggleSelectAll() {
+        if (adapter.getCount() > 0 && adapter.selectedCount() >= adapter.getCount()) {
+            adapter.clearSelection();
         } else {
-            actionMode.setTitle(count + " 项");
+            adapter.selectAll();
         }
+        updateSelectionBar();
     }
 
-    private void updateSelectionTitle() {
-        if (actionMode != null) {
-            actionMode.setTitle(selectedEntries().size() + " 项");
-        }
-    }
-
-    private void selectAll() {
-        if (adapter.getCount() == 0) {
+    private void updateSelectionBar() {
+        if (!selecting) {
             return;
         }
-        if (actionMode == null) {
-            listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-            listView.setItemChecked(0, true);
-            actionMode = startActionMode(new SelectionCallback());
+        selectionBar.setCount(adapter.selectedCount());
+        selectionBar.setAllSelected(adapter.getCount() > 0
+                && adapter.selectedCount() >= adapter.getCount());
+    }
+
+    /** 多选期间隐藏溢出菜单，把整个顶栏让给操作栏。 */
+    private void setMenuVisible(boolean visible) {
+        Menu menu = toolbar.getMenu();
+        for (int i = 0; i < menu.size(); i++) {
+            menu.getItem(i).setVisible(visible);
         }
-        for (int i = 0; i < adapter.getCount(); i++) {
-            listView.setItemChecked(i, true);
-        }
-        updateSelectionTitle();
     }
 
     private List<Entry> selectedEntries() {
-        ArrayList<Entry> selected = new ArrayList<>();
-        android.util.SparseBooleanArray checked = listView.getCheckedItemPositions();
-        if (checked != null) {
-            for (int i = 0; i < checked.size(); i++) {
-                if (!checked.valueAt(i)) {
-                    continue;
-                }
-                int position = checked.keyAt(i);
-                if (position >= 0 && position < adapter.getCount()) {
-                    selected.add(adapter.getItem(position));
-                }
-            }
-        }
-        return selected;
-    }
-
-    final class SelectionCallback implements ActionMode.Callback {
-
-        @Override
-        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            getMenuInflater().inflate(R.menu.menu_multi, menu);
-            tintMenu(menu);
-            return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            List<Entry> selected = selectedEntries();
-            int count = selected.size();
-            boolean single = count == 1;
-            menu.findItem(R.id.action_rename).setVisible(single);
-            menu.findItem(R.id.action_info).setVisible(single);
-            menu.findItem(R.id.action_share).setVisible(fs.isLocal());
-            menu.findItem(R.id.action_zip).setVisible(fs.isLocal());
-            boolean canUnzip = fs.isLocal() && single && !selected.get(0).dir
-                    && selected.get(0).name.toLowerCase(Locale.ROOT).endsWith(".zip");
-            menu.findItem(R.id.action_unzip).setVisible(canUnzip);
-            tintMenu(menu);
-            mode.setTitle(count + " 项");
-            return true;
-        }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            List<Entry> selected = selectedEntries();
-            if (selected.isEmpty()) {
-                return false;
-            }
-            int id = item.getItemId();
-            if (id == R.id.action_copy) {
-                Clipboard.set(fs, selected, false);
-                mode.finish();
-                updatePasteBar();
-                Bg.toast(BrowserActivity.this, "已复制 " + selected.size() + " 项");
-                return true;
-            }
-            if (id == R.id.action_cut) {
-                Clipboard.set(fs, selected, true);
-                mode.finish();
-                updatePasteBar();
-                Bg.toast(BrowserActivity.this, "已剪切 " + selected.size() + " 项");
-                return true;
-            }
-            if (id == R.id.action_rename) {
-                rename(selected.get(0));
-                mode.finish();
-                return true;
-            }
-            if (id == R.id.action_delete) {
-                confirmDelete(selected);
-                return true;
-            }
-            if (id == R.id.action_share) {
-                share(selected);
-                return true;
-            }
-            if (id == R.id.action_info) {
-                details(selected.get(0));
-                return true;
-            }
-            if (id == R.id.action_zip) {
-                zipSelected(selected);
-                return true;
-            }
-            if (id == R.id.action_unzip) {
-                unzip(selected.get(0));
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public void onDestroyActionMode(ActionMode mode) {
-            for (int i = 0; i < adapter.getCount(); i++) {
-                listView.setItemChecked(i, false);
-            }
-            listView.setChoiceMode(ListView.CHOICE_MODE_NONE);
-            actionMode = null;
-        }
+        return adapter.selectedItems();
     }
 
     // ------------------------------------------------------------------ 文件操作
@@ -725,9 +730,7 @@ public final class BrowserActivity extends BaseActivity {
                 .setMessage("确定删除这 " + entries.size() + " 个项目吗？此操作不可撤销。")
                 .setNegativeButton("取消", null)
                 .setPositiveButton("删除", (dialog, which) -> {
-                    if (actionMode != null) {
-                        actionMode.finish();
-                    }
+                    exitSelection();
                     Bg.run(this, "正在删除…", () -> {
                         for (Entry entry : entries) {
                             fs.delete(entry.path);
@@ -823,59 +826,20 @@ public final class BrowserActivity extends BaseActivity {
     }
 
     private void zipSelected(final List<Entry> entries) {
+        if (entries.isEmpty()) {
+            return;
+        }
         final String dir = path;
         String suggestion = folderName() + ".zip";
         inputDialog("压缩为", suggestion, value -> {
             String name = value.toLowerCase(Locale.ROOT).endsWith(".zip") ? value : value + ".zip";
             final String destination = fs.child(dir, name);
-            if (actionMode != null) {
-                actionMode.finish();
-            }
-            Bg.run(this, "正在压缩…", () -> FsUtil.zip(entries, destination), () -> {
+            exitSelection();
+            Bg.run(this, "正在压缩…", () -> FsUtil.zip(fs, entries, destination), () -> {
                 load(path);
                 Bg.toast(this, "压缩完成");
             });
         });
-    }
-
-    private void unzip(final Entry entry) {
-        if (actionMode != null) {
-            actionMode.finish();
-        }
-        String base = entry.name.substring(0, entry.name.length() - 4);
-        final String destination = fs.child(path, base);
-        Bg.run(this, "正在解压…", () -> FsUtil.unzip(
-                new File(entry.path), new File(destination)), () -> {
-            load(path);
-            Bg.toast(this, "解压完成");
-        });
-    }
-
-    private void share(List<Entry> entries) {
-        if (!fs.isLocal()) {
-            Bg.toast(this, "WebDAV 文件请先下载到本机再分享");
-            return;
-        }
-        ArrayList<Uri> uris = new ArrayList<>();
-        for (Entry entry : entries) {
-            uris.add(FileContentProvider.uriFor(entry.path));
-        }
-        Intent intent;
-        if (uris.size() == 1) {
-            intent = new Intent(Intent.ACTION_SEND);
-            intent.setType(Format.mime(entries.get(0)));
-            intent.putExtra(Intent.EXTRA_STREAM, uris.get(0));
-        } else {
-            intent = new Intent(Intent.ACTION_SEND_MULTIPLE);
-            intent.setType("*/*");
-            intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
-        }
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        try {
-            startActivity(Intent.createChooser(intent, "分享"));
-        } catch (Exception error) {
-            Bg.toast(this, "没有可用的分享应用");
-        }
     }
 
     private void details(Entry entry) {

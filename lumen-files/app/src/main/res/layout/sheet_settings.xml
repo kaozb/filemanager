@@ -208,18 +208,6 @@
             style="@style/SectionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="快捷访问" />
-
-        <GridLayout
-            android:id="@+id/quickGrid"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:columnCount="3" />
-
-        <TextView
-            style="@style/SectionTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:text="偏好" />
 
         <LinearLayout

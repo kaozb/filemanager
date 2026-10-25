@@ -2,6 +2,21 @@ plugins {
     id 'com.android.application'
 }
 
+// 版本规则：
+//   versionCode —— 每次打包由 package.sh 自增（记录在根目录 version.properties）
+//   versionName —— 打包时刻 MM.dd.H.mm，如 2026-10-26 01:07 → 10.26.1.07
+//   应用名称   —— "超级文件 N"，N 与 versionCode 同步递增
+def versionProps = new Properties()
+def versionFile = rootProject.file('version.properties')
+if (versionFile.exists()) {
+    versionFile.withInputStream { versionProps.load(it) }
+}
+def appVersionCode = (versionProps.getProperty('versionCode') ?: '1').trim().toInteger()
+def appVersionName = project.hasProperty('appVersionName')
+        ? project.property('appVersionName')
+        : new java.text.SimpleDateFormat('MM.dd.H.mm', Locale.CHINA).format(new Date())
+def appLabel = "超级文件 " + appVersionCode
+
 android {
     namespace 'com.lumen.files'
     compileSdk 34
@@ -10,8 +25,9 @@ android {
         applicationId "com.lumen.files"
         minSdk 21
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
+        manifestPlaceholders = [appLabel: appLabel]
     }
 
     buildTypes {

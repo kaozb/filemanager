@@ -63,13 +63,15 @@ public final class FsUtil {
         }
     }
 
-    public static void zip(List<Entry> items, String destination) throws IOException {
-        ZipOutputStream out = new ZipOutputStream(
-                new BufferedOutputStream(new FileOutputStream(destination), BUFFER));
+    /** 把若干文件/文件夹打包为 zip，走统一的 Fs 流式接口（本地与 WebDAV 通用）。 */
+    public static void zip(Fs fs, List<Entry> items, String destination) throws IOException {
+        ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(
+                fs.create(destination), BUFFER));
         try {
             for (Entry item : items) {
-                addZipEntry(new File(item.path), item.name, out);
+                addZipEntry(fs, item, item.name, out);
             }
+            out.finish();
         } finally {
             try {
                 out.close();
@@ -78,20 +80,17 @@ public final class FsUtil {
         }
     }
 
-    private static void addZipEntry(File file, String name, ZipOutputStream out)
+    private static void addZipEntry(Fs fs, Entry entry, String name, ZipOutputStream out)
             throws IOException {
-        if (file.isDirectory()) {
+        if (entry.dir) {
             out.putNextEntry(new ZipEntry(name + "/"));
             out.closeEntry();
-            File[] children = file.listFiles();
-            if (children != null) {
-                for (File child : children) {
-                    addZipEntry(child, name + "/" + child.getName(), out);
-                }
+            for (Entry child : fs.list(entry.path)) {
+                addZipEntry(fs, child, name + "/" + child.name, out);
             }
         } else {
             out.putNextEntry(new ZipEntry(name));
-            InputStream in = new FileInputStream(file);
+            InputStream in = fs.open(entry.path);
             try {
                 byte[] buffer = new byte[BUFFER];
                 int read;

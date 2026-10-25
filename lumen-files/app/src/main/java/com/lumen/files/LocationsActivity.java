@@ -3,24 +3,19 @@ package com.lumen.files;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.animation.AnimationUtils;
 import android.widget.EditText;
-import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toolbar;
-import android.widget.ViewFlipper;
 
 import com.lumen.files.webdav.WebDavClient;
 
@@ -32,34 +27,32 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 首页：两个文件面板（本地 / WebDAV 独立切换），左右滑动切换面板；
- * 设置与服务器管理收进底部悬浮面板，入口为顶栏齿轮图标。
+ * 首页：两个文件面板（本地 / WebDAV 独立切换），左右滑动跟手切换面板；
+ * 顶栏显示当前面板的路径导航（每一节可点击），设置与服务器管理收进底部悬浮面板。
  */
 public final class LocationsActivity extends BaseActivity implements PaneController.Host {
 
     private Toolbar toolbar;
-    private ViewFlipper flipper;
+    private CrumbBar crumb;
+    private SelectionBar selectionBar;
+    private PanePager pager;
     private View dotFirst;
     private View dotSecond;
 
     private PaneController left;
     private PaneController right;
+    private PaneController selectionPane;
 
     // 悬浮设置面板内的视图（打开时绑定，关闭时置空）
     private TextView storageSummary;
     private ProgressBar storageBar;
     private View permissionCard;
     private LinearLayout serversBox;
-    private GridLayout quickGrid;
     private TextView rowSizeValue;
     private TextView sortValue;
 
     private int page;
     private boolean firstResume;
-    private float downX;
-    private float downY;
-    private boolean dragging;
-    private boolean multiTouch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,26 +70,86 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             }
             return false;
         });
-        // 左上角：点标题切换数据源，长按弹面板菜单；左侧箭头返回上一级
-        toolbar.setNavigationOnClickListener(v -> currentPane().goUp());
-        toolbar.setOnClickListener(v -> onChooseSource(currentPane()));
-        toolbar.setOnLongClickListener(v -> {
+        crumb = findViewById(R.id.crumb);
+        crumb.setOnSegmentLongClickListener(v -> {
             currentPane().showPaneMenu();
             return true;
         });
+        selectionBar = findViewById(R.id.selectionBar);
+        selectionBar.setCallback(new SelectionBar.Callback() {
+            @Override
+            public void onSelectAll() {
+                if (selectionPane != null) {
+                    selectionPane.toggleSelectAll();
+                }
+            }
 
-        flipper = findViewById(R.id.flipper);
+            @Override
+            public void onCopy() {
+                if (selectionPane != null) {
+                    selectionPane.copySelected();
+                }
+            }
+
+            @Override
+            public void onMove() {
+                if (selectionPane != null) {
+                    selectionPane.moveSelected();
+                }
+            }
+
+            @Override
+            public void onZip() {
+                if (selectionPane != null) {
+                    selectionPane.zipSelected();
+                }
+            }
+
+            @Override
+            public void onDelete() {
+                if (selectionPane != null) {
+                    selectionPane.deleteSelected();
+                }
+            }
+
+            @Override
+            public void onClose() {
+                if (selectionPane != null) {
+                    selectionPane.exitSelection();
+                }
+            }
+        });
+        // 路径节之外的区域：点按切换数据源，长按弹面板菜单
+        bindToolbarGestures();
+
+        pager = findViewById(R.id.pager);
         dotFirst = findViewById(R.id.dotFirst);
         dotSecond = findViewById(R.id.dotSecond);
+        pager.setCallback(new PanePager.Callback() {
+            @Override
+            public void onPageSettled(int settled) {
+                if (settled != page) {
+                    left.exitSelection();
+                    right.exitSelection();
+                    page = settled;
+                    updateToolbar();
+                }
+                paintDots(page);
+            }
+
+            @Override
+            public void onDragProgress(float fraction) {
+                paintDots(fraction);
+            }
+        });
 
         left = new PaneController(this, this, 0, findViewById(R.id.paneLeft));
         right = new PaneController(this, this, 1, findViewById(R.id.paneRight));
 
         page = savedInstanceState == null ? 0 : savedInstanceState.getInt("page", 0);
-        if (page == 1) {
-            flipper.setDisplayedChild(1);
-        }
-        updateDots();
+        pager.setPage(page, false);
+        initDots();
+        paintDots(page);
         updateToolbar();
 
         firstResume = true;
@@ -134,6 +187,10 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     @Override
     public void onBackPressed() {
+        if (selectionPane != null) {
+            selectionPane.exitSelection();
+            return;
+        }
         if (page == 1) {
             showPage(0);
             return;
@@ -147,87 +204,18 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
 
     // ------------------------------------------------------------------ 左右滑动切面板
 
-    @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        switch (event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN:
-                downX = event.getX();
-                downY = event.getY();
-                dragging = false;
-                multiTouch = false;
-                break;
-            case MotionEvent.ACTION_POINTER_DOWN:
-                // 双指（捏合缩放行高）不触发翻页
-                multiTouch = true;
-                dragging = false;
-                break;
-            case MotionEvent.ACTION_MOVE:
-                if (!multiTouch) {
-                    float dx = event.getX() - downX;
-                    float dy = event.getY() - downY;
-                    if (Math.abs(dx) > dp(28) && Math.abs(dx) > Math.abs(dy) * 1.4f) {
-                        dragging = true;
-                    }
-                }
-                break;
-            case MotionEvent.ACTION_UP:
-                if (dragging && !multiTouch) {
-                    float moved = event.getX() - downX;
-                    if (moved < -dp(64) && page == 0) {
-                        showPage(1);
-                    } else if (moved > dp(64) && page == 1) {
-                        showPage(0);
-                    }
-                }
-                dragging = false;
-                break;
-            case MotionEvent.ACTION_CANCEL:
-                dragging = false;
-                break;
-            default:
-                break;
-        }
-        return super.dispatchTouchEvent(event);
-    }
-
     private void showPage(int target) {
-        if (target == page) {
-            return;
-        }
-        if (target == 1) {
-            flipper.setInAnimation(AnimationUtils.loadAnimation(this, R.anim.page_in_right));
-            flipper.setOutAnimation(AnimationUtils.loadAnimation(this, R.anim.page_out_left));
-            flipper.showNext();
-        } else {
-            flipper.setInAnimation(AnimationUtils.loadAnimation(this, R.anim.page_in_left));
-            flipper.setOutAnimation(AnimationUtils.loadAnimation(this, R.anim.page_out_right));
-            flipper.showPrevious();
-        }
-        page = target;
-        updateDots();
-        updateToolbar();
-    }
-
-    private void updateDots() {
-        paintDot(dotFirst, page == 0);
-        paintDot(dotSecond, page == 1);
+        pager.setPage(target, true);
     }
 
     private PaneController currentPane() {
         return page == 0 ? left : right;
     }
 
-    /** 顶栏跟随当前面板：标题 = 存储对象/目录名，左侧箭头 = 上一级。 */
+    /** 顶栏跟随当前面板：显示可点击的路径导航。 */
     private void updateToolbar() {
         PaneController pane = currentPane();
-        toolbar.setTitle(pane.title());
-        if (pane.canGoUp()) {
-            Drawable icon = getDrawable(R.drawable.ic_up).mutate();
-            icon.setTint(secondaryColor);
-            toolbar.setNavigationIcon(icon);
-        } else {
-            toolbar.setNavigationIcon(null);
-        }
+        crumb.setSegments(pane.crumbSegments(), target -> pane.load(target));
     }
 
     @Override
@@ -237,11 +225,54 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         }
     }
 
-    private void paintDot(View dot, boolean active) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setShape(GradientDrawable.OVAL);
-        drawable.setColor(active ? accent : secondaryColor);
-        dot.setBackground(drawable);
+    /** 路径节之外的区域：点按切换数据源，长按弹面板菜单。 */
+    private void bindToolbarGestures() {
+        toolbar.setOnClickListener(v -> onChooseSource(currentPane()));
+        toolbar.setOnLongClickListener(v -> {
+            currentPane().showPaneMenu();
+            return true;
+        });
+    }
+
+    /** 面板进入/退出多选时，顶栏在路径导航与操作栏之间切换。 */
+    @Override
+    public void onSelectionChanged(PaneController pane) {
+        if (pane.selectionActive()) {
+            selectionPane = pane;
+            crumb.setVisibility(View.GONE);
+            selectionBar.setVisibility(View.VISIBLE);
+            toolbar.setOnClickListener(null);
+            toolbar.setOnLongClickListener(null);
+            toolbar.getMenu().findItem(R.id.action_settings).setVisible(false);
+        } else if (selectionPane == pane) {
+            selectionPane = null;
+            selectionBar.setVisibility(View.GONE);
+            crumb.setVisibility(View.VISIBLE);
+            bindToolbarGestures();
+            toolbar.getMenu().findItem(R.id.action_settings).setVisible(true);
+        }
+        refreshSelectionBar();
+    }
+
+    private void refreshSelectionBar() {
+        if (selectionPane == null) {
+            return;
+        }
+        selectionBar.setCount(selectionPane.selectedCount());
+        selectionBar.setAllSelected(selectionPane.allSelected());
+    }
+
+    /** 指示点跟随拖动进度联动：两枚圆点同色，用透明度区分当前面板。 */
+    private void paintDots(float fraction) {
+        float clamped = Math.max(0f, Math.min(1f, fraction));
+        dotFirst.setAlpha(1f - 0.6f * clamped);
+        dotSecond.setAlpha(0.4f + 0.6f * clamped);
+    }
+
+    // 初始绘制两枚指示点（强调色，透明度联动）
+    private void initDots() {
+        dotFirst.setBackgroundResource(R.drawable.bg_dot_accent);
+        dotSecond.setBackgroundResource(R.drawable.bg_dot_accent);
     }
 
     // ------------------------------------------------------------------ 数据源
@@ -298,7 +329,6 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         storageBar = sheet.findViewById(R.id.storageBar);
         permissionCard = sheet.findViewById(R.id.permissionCard);
         serversBox = sheet.findViewById(R.id.serversBox);
-        quickGrid = sheet.findViewById(R.id.quickGrid);
         rowSizeValue = sheet.findViewById(R.id.rowSizeValue);
         sortValue = sheet.findViewById(R.id.sortValue);
 
@@ -332,7 +362,6 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             storageBar = null;
             permissionCard = null;
             serversBox = null;
-            quickGrid = null;
             rowSizeValue = null;
             sortValue = null;
         });
@@ -356,73 +385,7 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
             storageBar.setProgress((int) Math.min(1000, used * 1000 / usage[0]));
         }
 
-        renderQuick();
         renderServers();
-    }
-
-    private void renderQuick() {
-        if (quickGrid == null) {
-            return;
-        }
-        quickGrid.removeAllViews();
-        String[][] shortcuts = StorageUtil.quickShortcuts();
-        for (int i = 0; i < shortcuts.length; i++) {
-            final String label = shortcuts[i][0];
-            final String path = shortcuts[i][1];
-            View card = getLayoutInflater().inflate(R.layout.item_quick, quickGrid, false);
-            ImageView icon = card.findViewById(R.id.icon);
-            icon.setImageResource(quickIcon(label));
-            icon.setColorFilter(quickTint(label));
-            ((TextView) card.findViewById(R.id.label)).setText(label);
-
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams(
-                    GridLayout.spec(i / 3), GridLayout.spec(i % 3, 1f));
-            params.width = 0;
-            params.height = GridLayout.LayoutParams.WRAP_CONTENT;
-            params.setMargins(0, 0, dp(8), dp(8));
-            card.setLayoutParams(params);
-
-            card.setOnClickListener(v -> {
-                if (new File(path).isDirectory()) {
-                    left.setLocal(path);
-                    showPage(0);
-                } else {
-                    Bg.toast(LocationsActivity.this, "该文件夹不存在");
-                }
-            });
-            quickGrid.addView(card);
-        }
-    }
-
-    private int quickIcon(String label) {
-        switch (label) {
-            case "下载":
-                return R.drawable.ic_download;
-            case "音乐":
-                return R.drawable.ic_audio;
-            case "视频":
-                return R.drawable.ic_video;
-            case "文档":
-                return R.drawable.ic_doc;
-            default:
-                return R.drawable.ic_image;
-        }
-    }
-
-    private int quickTint(String label) {
-        switch (label) {
-            case "图片":
-                return resColor(R.color.type_image);
-            case "相机":
-            case "视频":
-                return resColor(R.color.type_video);
-            case "音乐":
-                return resColor(R.color.type_audio);
-            case "文档":
-                return resColor(R.color.type_doc);
-            default:
-                return accent;
-        }
     }
 
     @SuppressWarnings("deprecation")

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.lumen.files.SelectionBar xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/selectionBar"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/lumenSurface"
+    android:paddingStart="2dp"
+    android:paddingEnd="2dp"
+    android:visibility="gone">
+
+    <ImageButton
+        android:id="@+id/selectionClose"
+        android:layout_width="36dp"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@null"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_close"
+        android:tint="?attr/lumenSecondary" />
+
+    <TextView
+        android:id="@+id/selectionCount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textColor="?attr/lumenSecondary"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/selectionAll"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:paddingStart="7dp"
+        android:paddingEnd="7dp"
+        android:text="全选"
+        android:textColor="?attr/lumenAccent"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/selectionCopy"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:paddingStart="7dp"
+        android:paddingEnd="7dp"
+        android:text="复制"
+        android:textColor="?attr/lumenAccent"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/selectionMove"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:paddingStart="7dp"
+        android:paddingEnd="7dp"
+        android:text="移动"
+        android:textColor="?attr/lumenAccent"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/selectionZip"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:paddingStart="7dp"
+        android:paddingEnd="7dp"
+        android:text="压缩"
+        android:textColor="?attr/lumenAccent"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/selectionDelete"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="?android:attr/selectableItemBackground"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:paddingStart="7dp"
+        android:paddingEnd="7dp"
+        android:text="删除"
+        android:textColor="?attr/lumenDanger"
+        android:textSize="13sp" />
+
+</com.lumen.files.SelectionBar>
