@@ -191,14 +191,16 @@ public final class R {
     public static final int pasteClose=0x7f040026;
     public static final int pasteText=0x7f040027;
     public static final int permissionCard=0x7f040028;
-    public static final int quickGrid=0x7f040029;
-    public static final int rootsBox=0x7f04002a;
-    public static final int serversBox=0x7f04002b;
-    public static final int subtitle=0x7f04002c;
-    public static final int title=0x7f04002d;
-    public static final int toolbar=0x7f04002e;
-    public static final int url=0x7f04002f;
-    public static final int user=0x7f040030;
+    public static final int permissionText=0x7f040029;
+    public static final int permissionTitle=0x7f04002a;
+    public static final int quickGrid=0x7f04002b;
+    public static final int rootsBox=0x7f04002c;
+    public static final int serversBox=0x7f04002d;
+    public static final int subtitle=0x7f04002e;
+    public static final int title=0x7f04002f;
+    public static final int toolbar=0x7f040030;
+    public static final int url=0x7f040031;
+    public static final int user=0x7f040032;
   }
   public static final class layout {
     public static final int activity_browser=0x7f050000;
