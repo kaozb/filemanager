@@ -29,7 +29,12 @@ if [ ! -f "$VERSION_FILE" ]; then
   printf 'versionCode=1\n' > "$VERSION_FILE"
 fi
 CODE="$(sed -n 's/^versionCode=//p' "$VERSION_FILE" | tr -dc '0-9')"
-CODE=$(( ${CODE:-0} + 1 ))
+# CI 流水线可通过环境变量 VERSION_CODE 直接指定（如 run_number），本地打包仍自动 +1
+if [ -n "${VERSION_CODE:-}" ]; then
+  CODE="$VERSION_CODE"
+else
+  CODE=$(( ${CODE:-0} + 1 ))
+fi
 VERSION_NAME="$(date +%m.%d.%-H.%M)"
 APP_LABEL="超级文件 $CODE"
 printf 'versionCode=%s\n' "$CODE" > "$VERSION_FILE"
