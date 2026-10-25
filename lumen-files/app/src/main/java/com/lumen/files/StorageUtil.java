@@ -14,6 +14,7 @@ import android.provider.Settings;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /** 存储卷、权限与空间统计。 */
 public final class StorageUtil {
@@ -32,23 +33,56 @@ public final class StorageUtil {
         return true;
     }
 
+    /** 华为 / 荣耀机型（含鸿蒙 HarmonyOS）使用独立的权限设置入口。 */
+    public static boolean isHuaweiLike() {
+        String brand = Build.BRAND == null ? "" : Build.BRAND.toLowerCase(Locale.ROOT);
+        String manufacturer = Build.MANUFACTURER == null
+                ? "" : Build.MANUFACTURER.toLowerCase(Locale.ROOT);
+        return brand.contains("huawei") || brand.contains("honor")
+                || manufacturer.contains("huawei") || manufacturer.contains("honor");
+    }
+
+    public static String permissionHint() {
+        if (isHuaweiLike()) {
+            return "鸿蒙/荣耀：设置 → 应用 → 权限 → 所有文件访问";
+        }
+        return "开启后才能浏览和管理本机全部文件";
+    }
+
     public static void requestAccess(Activity activity) {
         if (Build.VERSION.SDK_INT >= 30) {
-            try {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                intent.setData(Uri.parse("package:" + activity.getPackageName()));
-                activity.startActivity(intent);
-            } catch (Exception error) {
-                try {
-                    activity.startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));
-                } catch (Exception ignored) {
-                    Bg.toast(activity, "无法打开权限设置");
-                }
+            Intent appAllFiles = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            appAllFiles.setData(Uri.parse("package:" + activity.getPackageName()));
+            if (start(activity, appAllFiles)) {
+                return;
             }
+            if (start(activity, new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))) {
+                return;
+            }
+            if (openAppDetails(activity)) {
+                return;
+            }
+            Bg.toast(activity, "无法打开权限设置，请手动到系统设置中授权");
         } else if (Build.VERSION.SDK_INT >= 23) {
             activity.requestPermissions(new String[]{
                     Manifest.permission.READ_EXTERNAL_STORAGE,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE}, 77);
+        }
+    }
+
+    /** 打开应用详情页，作为鸿蒙等定制系统的最后兜底入口。 */
+    public static boolean openAppDetails(Activity activity) {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + activity.getPackageName()));
+        return start(activity, intent);
+    }
+
+    private static boolean start(Activity activity, Intent intent) {
+        try {
+            activity.startActivity(intent);
+            return true;
+        } catch (Exception error) {
+            return false;
         }
     }
 

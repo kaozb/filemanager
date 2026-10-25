@@ -116,14 +116,16 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/permissionTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-medium"
-                        android:text="需要所有文件访问权限"
+                        android:text="需要存储访问权限"
                         android:textColor="?attr/lumenText"
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/permissionText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="3dp"

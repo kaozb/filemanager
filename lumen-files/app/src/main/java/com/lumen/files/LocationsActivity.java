@@ -3,6 +3,7 @@ package com.lumen.files;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -31,6 +32,8 @@ public final class LocationsActivity extends BaseActivity {
     private LinearLayout serversBox;
     private GridLayout quickGrid;
     private View permissionCard;
+    private TextView permissionTitle;
+    private TextView permissionText;
     private TextView heroSub;
 
     @Override
@@ -55,7 +58,7 @@ public final class LocationsActivity extends BaseActivity {
                 if (StorageUtil.hasAccess(this)) {
                     Bg.toast(this, "已拥有全部文件访问权限");
                 } else {
-                    StorageUtil.requestAccess(this);
+                    requestPermission();
                 }
                 return true;
             }
@@ -67,13 +70,15 @@ public final class LocationsActivity extends BaseActivity {
         });
 
         permissionCard = findViewById(R.id.permissionCard);
+        permissionTitle = findViewById(R.id.permissionTitle);
+        permissionText = findViewById(R.id.permissionText);
         heroSub = findViewById(R.id.heroSub);
         rootsBox = findViewById(R.id.rootsBox);
         serversBox = findViewById(R.id.serversBox);
         quickGrid = findViewById(R.id.quickGrid);
 
         Button grant = findViewById(R.id.grantBtn);
-        grant.setOnClickListener(v -> StorageUtil.requestAccess(this));
+        grant.setOnClickListener(v -> requestPermission());
 
         View hero = findViewById(R.id.heroCard);
         hero.setOnClickListener(v -> openLocal(
@@ -93,8 +98,34 @@ public final class LocationsActivity extends BaseActivity {
         render();
     }
 
+    private void requestPermission() {
+        if (StorageUtil.hasAccess(this)) {
+            Bg.toast(this, "已拥有全部文件访问权限");
+            return;
+        }
+        if (StorageUtil.isHuaweiLike() && Build.VERSION.SDK_INT >= 30) {
+            new AlertDialog.Builder(this)
+                    .setTitle("鸿蒙 / 荣耀存储授权")
+                    .setMessage("鸿蒙 4.0：设置 → 应用和服务 → 应用管理 → 流光文件"
+                            + " → 权限 → 所有文件访问。\n\n"
+                            + "荣耀 Magic 2（Android 10 及以下）：在权限中开启“存储”即可。\n\n"
+                            + "如果系统没有自动跳到对应页面，可点“应用设置”手动开启。")
+                    .setNegativeButton("取消", null)
+                    .setNeutralButton("应用设置", (dialog, which) ->
+                            StorageUtil.openAppDetails(this))
+                    .setPositiveButton("去授权", (dialog, which) ->
+                            StorageUtil.requestAccess(this))
+                    .show();
+            return;
+        }
+        StorageUtil.requestAccess(this);
+    }
+
     private void render() {
         permissionCard.setVisibility(StorageUtil.hasAccess(this) ? View.GONE : View.VISIBLE);
+        permissionTitle.setText(Build.VERSION.SDK_INT >= 30
+                ? "需要所有文件访问权限" : "需要存储访问权限");
+        permissionText.setText(StorageUtil.permissionHint());
 
         long[] usage = StorageUtil.usage(
                 android.os.Environment.getExternalStorageDirectory());
