@@ -2,10 +2,14 @@ package com.lumen.files;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
@@ -14,24 +18,39 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toolbar;
+import android.widget.ViewFlipper;
 
 import com.lumen.files.webdav.WebDavClient;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
-/** 首页：本地存储、快捷入口、WebDAV 服务器管理。 */
-public final class LocationsActivity extends BaseActivity {
+/**
+ * 首页：左边双栏文件浏览（本地 / WebDAV 可各自切换），右滑进入 WebDAV 与设置页。
+ */
+public final class LocationsActivity extends BaseActivity implements PaneController.Host {
 
     private Toolbar toolbar;
-    private LinearLayout rootsBox;
+    private ViewFlipper flipper;
+    private TextView tabFiles;
+    private TextView tabSettings;
+    private TextView storageSummary;
     private LinearLayout serversBox;
     private GridLayout quickGrid;
     private View permissionCard;
-    private TextView heroSub;
+
+    private PaneController left;
+    private PaneController right;
+
+    private int page;
+    private boolean firstResume;
+    private float downX;
+    private float downY;
+    private boolean dragging;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,12 +59,15 @@ public final class LocationsActivity extends BaseActivity {
 
         toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("流光文件");
-        toolbar.setSubtitle("本地与 WebDAV");
         styleToolbar(toolbar);
         toolbar.inflateMenu(R.menu.menu_locations);
         tintMenu(toolbar.getMenu());
         toolbar.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
+            if (id == R.id.action_servers) {
+                showPage(1);
+                return true;
+            }
             if (id == R.id.action_theme) {
                 Prefs.setDark(this, !Prefs.dark(this));
                 recreate();
@@ -66,70 +88,192 @@ public final class LocationsActivity extends BaseActivity {
             return false;
         });
 
-        permissionCard = findViewById(R.id.permissionCard);
-        heroSub = findViewById(R.id.heroSub);
-        rootsBox = findViewById(R.id.rootsBox);
+        flipper = findViewById(R.id.flipper);
+        tabFiles = findViewById(R.id.tabFiles);
+        tabSettings = findViewById(R.id.tabSettings);
+        storageSummary = findViewById(R.id.storageSummary);
         serversBox = findViewById(R.id.serversBox);
         quickGrid = findViewById(R.id.quickGrid);
+        permissionCard = findViewById(R.id.permissionCard);
 
-        Button grant = findViewById(R.id.grantBtn);
-        grant.setOnClickListener(v -> StorageUtil.requestAccess(this));
+        tabFiles.setOnClickListener(v -> showPage(0));
+        tabSettings.setOnClickListener(v -> showPage(1));
 
-        View hero = findViewById(R.id.heroCard);
-        hero.setOnClickListener(v -> openLocal(
-                android.os.Environment.getExternalStorageDirectory().getAbsolutePath()));
+        findViewById(R.id.grantBtn).setOnClickListener(v -> StorageUtil.requestAccess(this));
+        findViewById(R.id.addServerBtn).setOnClickListener(v -> showServerDialog(null));
+
+        left = new PaneController(this, this, 0, findViewById(R.id.paneLeft));
+        right = new PaneController(this, this, 1, findViewById(R.id.paneRight));
+
+        page = savedInstanceState == null ? 0 : savedInstanceState.getInt("page", 0);
+        if (page == 1) {
+            flipper.setDisplayedChild(1);
+        }
+        firstResume = true;
+        left.restore();
+        right.restore();
+        updateChrome();
+        renderSettings();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        render();
+        renderSettings();
+        if (firstResume) {
+            firstResume = false;
+        } else {
+            left.applyPrefs();
+            right.applyPrefs();
+            left.reload();
+            right.reload();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("page", page);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        render();
+        renderSettings();
+        left.reload();
+        right.reload();
     }
 
-    private void render() {
-        permissionCard.setVisibility(StorageUtil.hasAccess(this) ? View.GONE : View.VISIBLE);
-
-        long[] usage = StorageUtil.usage(
-                android.os.Environment.getExternalStorageDirectory());
-        heroSub.setText(String.format(Locale.US, "可用 %s · 共 %s",
-                Format.size(usage[1]), Format.size(usage[0])));
-
-        renderRoots();
-        renderQuick();
-        renderServers();
-    }
-
-    private void renderRoots() {
-        rootsBox.removeAllViews();
-        List<File> roots = StorageUtil.roots();
-        if (roots.isEmpty()) {
-            TextView empty = new TextView(this);
-            empty.setText("未发现可访问的存储卷");
-            empty.setTextColor(secondaryColor);
-            empty.setTextSize(13);
-            empty.setPadding(0, dp(4), 0, dp(8));
-            rootsBox.addView(empty);
+    @Override
+    public void onBackPressed() {
+        if (page == 1) {
+            showPage(0);
             return;
         }
-        for (File root : roots) {
-            long[] usage = StorageUtil.usage(root);
-            long used = Math.max(0, usage[0] - usage[1]);
-            int percent = usage[0] <= 0 ? 0 : (int) (used * 1000 / usage[0]);
-            String subtitle = String.format(Locale.US, "%s 可用 · 共 %s",
-                    Format.size(usage[1]), Format.size(usage[0]));
-            View card = addCard(R.drawable.ic_storage, accent,
-                    StorageUtil.label(root), subtitle, percent);
-            final String path = root.getAbsolutePath();
-            card.setOnClickListener(v -> openLocal(path));
-            rootsBox.addView(card);
+        super.onBackPressed();
+    }
+
+    // ------------------------------------------------------------------ 左右滑动
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                downX = event.getX();
+                downY = event.getY();
+                dragging = false;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                float dx = event.getX() - downX;
+                float dy = event.getY() - downY;
+                if (Math.abs(dx) > dp(28) && Math.abs(dx) > Math.abs(dy) * 1.4f) {
+                    dragging = true;
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                if (dragging) {
+                    float moved = event.getX() - downX;
+                    if (moved < -dp(64) && page == 0) {
+                        showPage(1);
+                    } else if (moved > dp(64) && page == 1) {
+                        showPage(0);
+                    }
+                }
+                dragging = false;
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                dragging = false;
+                break;
+            default:
+                break;
         }
+        return super.dispatchTouchEvent(event);
+    }
+
+    private void showPage(int target) {
+        if (target == page) {
+            updateChrome();
+            return;
+        }
+        if (target == 1) {
+            flipper.setInAnimation(this, R.anim.page_in_right);
+            flipper.setOutAnimation(this, R.anim.page_out_left);
+            flipper.showNext();
+        } else {
+            flipper.setInAnimation(this, R.anim.page_in_left);
+            flipper.setOutAnimation(this, R.anim.page_out_right);
+            flipper.showPrevious();
+        }
+        page = target;
+        updateChrome();
+        if (target == 1) {
+            renderSettings();
+        }
+    }
+
+    private void updateChrome() {
+        toolbar.setSubtitle(page == 0 ? "本地 · WebDAV · 左右滑动切换" : "服务器管理与设置");
+        tabFiles.setTextColor(page == 0 ? accent : secondaryColor);
+        tabSettings.setTextColor(page == 1 ? accent : secondaryColor);
+        tabFiles.setTypeface(page == 0 ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+        tabSettings.setTypeface(page == 1 ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+    }
+
+    // ------------------------------------------------------------------ 数据源
+
+    @Override
+    public void onChooseSource(final PaneController pane) {
+        final ArrayList<String> labels = new ArrayList<>();
+        final ArrayList<Runnable> actions = new ArrayList<>();
+
+        List<File> roots = StorageUtil.roots();
+        for (final File root : roots) {
+            labels.add(StorageUtil.label(root) + " · " + root.getAbsolutePath());
+            actions.add(() -> pane.setLocal(root.getAbsolutePath()));
+        }
+        if (roots.isEmpty()) {
+            labels.add("开启所有文件访问权限");
+            actions.add(() -> StorageUtil.requestAccess(this));
+        }
+        for (final Server server : Prefs.servers(this)) {
+            labels.add("WebDAV · " + server.name + " · " + server.url);
+            actions.add(() -> pane.setServer(server));
+        }
+        labels.add("＋ 添加 WebDAV 服务器");
+        actions.add(() -> {
+            showPage(1);
+            showServerDialog(null);
+        });
+
+        new AlertDialog.Builder(this)
+                .setTitle("选择数据源")
+                .setItems(labels.toArray(new String[0]), (dialog, which) ->
+                        actions.get(which).run())
+                .show();
+    }
+
+    @Override
+    public void onOpenSettings() {
+        showPage(1);
+    }
+
+    @Override
+    public PaneController other(PaneController pane) {
+        return pane == left ? right : left;
+    }
+
+    // ------------------------------------------------------------------ 设置页
+
+    private void renderSettings() {
+        permissionCard.setVisibility(StorageUtil.hasAccess(this) ? View.GONE : View.VISIBLE);
+
+        long[] usage = StorageUtil.usage(Environment.getExternalStorageDirectory());
+        storageSummary.setText(String.format(Locale.US, "内部存储 · 可用 %s / 共 %s",
+                Format.size(usage[1]), Format.size(usage[0])));
+
+        renderQuick();
+        renderServers();
     }
 
     private void renderQuick() {
@@ -155,7 +299,8 @@ public final class LocationsActivity extends BaseActivity {
             final String path = shortcuts[i][1];
             chip.setOnClickListener(v -> {
                 if (new File(path).isDirectory()) {
-                    openLocal(path);
+                    left.setLocal(path);
+                    showPage(0);
                 } else {
                     Bg.toast(LocationsActivity.this, "该文件夹不存在");
                 }
@@ -167,27 +312,33 @@ public final class LocationsActivity extends BaseActivity {
     private void renderServers() {
         serversBox.removeAllViews();
         List<Server> servers = Prefs.servers(this);
+        if (servers.isEmpty()) {
+            TextView empty = new TextView(this);
+            empty.setText("还没有服务器，点击下方按钮添加");
+            empty.setTextColor(secondaryColor);
+            empty.setTextSize(13);
+            empty.setPadding(0, dp(4), 0, dp(10));
+            serversBox.addView(empty);
+            return;
+        }
         for (final Server server : servers) {
-            View card = addCard(R.drawable.ic_cloud, color(R.attr.lumenAccent2),
-                    server.name, server.url, -1);
-            card.setOnClickListener(v -> openServer(server));
+            View card = addCard(serversBox, R.drawable.ic_cloud,
+                    color(R.attr.lumenAccent2), server.name, server.url, -1);
+            card.setOnClickListener(v -> {
+                left.setServer(server);
+                showPage(0);
+            });
             card.setOnLongClickListener(v -> {
                 showServerMenu(server);
                 return true;
             });
             serversBox.addView(card);
         }
-        View add = addCard(R.drawable.ic_add, accent,
-                "添加 WebDAV 服务器", "支持 HTTPS 与 Basic 认证", -1);
-        add.setOnClickListener(v -> showServerDialog(null));
-        ImageView chevron = add.findViewById(R.id.chevron);
-        chevron.setVisibility(View.INVISIBLE);
-        serversBox.addView(add);
     }
 
-    private View addCard(int iconResource, int tintColor, String title,
+    private View addCard(ViewGroup parent, int iconResource, int tintColor, String title,
                          String subtitle, int percent) {
-        View card = getLayoutInflater().inflate(R.layout.item_location, rootsBox, false);
+        View card = getLayoutInflater().inflate(R.layout.item_location, parent, false);
         ImageView icon = card.findViewById(R.id.icon);
         Drawable drawable = getDrawable(iconResource).mutate();
         drawable.setTint(tintColor);
@@ -202,19 +353,7 @@ public final class LocationsActivity extends BaseActivity {
         return card;
     }
 
-    private void openLocal(String path) {
-        Intent intent = new Intent(this, BrowserActivity.class);
-        intent.putExtra(BrowserActivity.EXTRA_SERVER, -1);
-        intent.putExtra(BrowserActivity.EXTRA_PATH, path);
-        startActivity(intent);
-    }
-
-    private void openServer(Server server) {
-        Intent intent = new Intent(this, BrowserActivity.class);
-        intent.putExtra(BrowserActivity.EXTRA_SERVER, server.id);
-        intent.putExtra(BrowserActivity.EXTRA_PATH, "/");
-        startActivity(intent);
-    }
+    // ------------------------------------------------------------------ 服务器管理
 
     private void showServerMenu(final Server server) {
         new AlertDialog.Builder(this)
@@ -243,7 +382,14 @@ public final class LocationsActivity extends BaseActivity {
                         }
                     }
                     Prefs.saveServers(this, servers);
-                    render();
+                    String home = Environment.getExternalStorageDirectory().getAbsolutePath();
+                    if (left.serverId() == server.id) {
+                        left.setLocal(home);
+                    }
+                    if (right.serverId() == server.id) {
+                        right.setLocal(home);
+                    }
+                    renderSettings();
                     Bg.toast(this, "已删除");
                 })
                 .show();
@@ -317,7 +463,15 @@ public final class LocationsActivity extends BaseActivity {
                         if (dialog.isShowing()) {
                             dialog.dismiss();
                         }
-                        render();
+                        if (editing != null) {
+                            if (left.serverId() == editing.id) {
+                                left.setServer(editing);
+                            }
+                            if (right.serverId() == editing.id) {
+                                right.setServer(editing);
+                            }
+                        }
+                        renderSettings();
                         Bg.toast(LocationsActivity.this, "已保存");
                     });
                 }));
@@ -328,10 +482,10 @@ public final class LocationsActivity extends BaseActivity {
         new AlertDialog.Builder(this)
                 .setTitle("流光文件")
                 .setMessage("版本 1.0\n\n"
-                        + "纯 Java · 零第三方依赖 · 单 Activity 栈\n"
+                        + "纯 Java · 零第三方依赖 · 双栏浏览\n"
                         + "本地全盘管理 + WebDAV 客户端\n\n"
-                        + "特性：多选复制/剪切/粘贴、搜索、压缩解压、"
-                        + "图片与文本预览、系统打开方式、明暗主题。")
+                        + "特性：双栏独立数据源、跨栏复制、多选复制/剪切/粘贴、"
+                        + "搜索、压缩解压、图片与文本预览、明暗主题。")
                 .setPositiveButton("知道了", null)
                 .show();
     }

@@ -8,14 +8,10 @@ import com.lumen.files.Entry;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.BufferedOutputStream;
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -24,20 +20,22 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * 极简 WebDAV 客户端：仅 PROPFIND / GET / PUT / MKCOL / DELETE / MOVE / COPY。
- * 使用 HttpURLConnection 与流式读写，避免整文件进入内存。
+ * 极简 WebDAV 客户端：PROPFIND / GET / PUT / MKCOL / DELETE / MOVE / COPY。
+ * 走自研 HttpWire（Socket），因此不受 Android HttpURLConnection 的方法限制。
  */
 public final class WebDavClient {
 
-    private static final String PROPFIND_BODY =
+    private static final byte[] PROPFIND_BODY = (
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                     + "<d:propfind xmlns:d=\"DAV:\"><d:prop>"
                     + "<d:displayname/><d:resourcetype/><d:getcontentlength/><d:getlastmodified/>"
-                    + "</d:prop></d:propfind>";
+                    + "</d:prop></d:propfind>").getBytes(StandardCharsets.UTF_8);
 
     private final String base;
     private final String authorization;
@@ -76,35 +74,63 @@ public final class WebDavClient {
         if (code == 404) {
             return false;
         }
-        checkCode(null, code);
+        checkCode(code, null);
         return false;
     }
 
     public InputStream get(String path) throws IOException {
-        final HttpURLConnection connection = open("GET", path);
-        int code = connection.getResponseCode();
-        check(connection, code, 200, 206);
-        InputStream stream = connection.getInputStream();
-        return new FilterInputStream(stream) {
-            @Override
-            public void close() throws IOException {
-                try {
-                    super.close();
-                } finally {
-                    connection.disconnect();
+        final HttpWire.Reply reply = execute("GET", path, null, null);
+        try {
+            check(reply);
+            InputStream stream = reply.body;
+            return new InputStream() {
+                @Override
+                public int read() throws IOException {
+                    return stream.read();
                 }
-            }
-        };
+
+                @Override
+                public int read(byte[] buffer, int offset, int length) throws IOException {
+                    return stream.read(buffer, offset, length);
+                }
+
+                @Override
+                public int available() throws IOException {
+                    return stream.available();
+                }
+
+                @Override
+                public void close() {
+                    reply.close();
+                }
+            };
+        } catch (IOException error) {
+            reply.close();
+            throw error;
+        }
     }
 
     public OutputStream put(String path) throws IOException {
-        final HttpURLConnection connection = open("PUT", path);
-        connection.setDoOutput(true);
-        connection.setChunkedStreamingMode(64 * 1024);
-        connection.setRequestProperty("Content-Type", "application/octet-stream");
-        final OutputStream raw = connection.getOutputStream();
-        return new FilterOutputStream(new BufferedOutputStream(raw, 64 * 1024)) {
+        URL target = new URL(url(path));
+        final HttpWire.Upload upload = HttpWire.upload(target, authorization,
+                "application/octet-stream");
+        return new OutputStream() {
             private boolean closed;
+
+            @Override
+            public void write(int value) throws IOException {
+                upload.stream().write(value);
+            }
+
+            @Override
+            public void write(byte[] buffer, int offset, int length) throws IOException {
+                upload.stream().write(buffer, offset, length);
+            }
+
+            @Override
+            public void flush() throws IOException {
+                upload.stream().flush();
+            }
 
             @Override
             public void close() throws IOException {
@@ -112,48 +138,39 @@ public final class WebDavClient {
                     return;
                 }
                 closed = true;
+                HttpWire.Reply reply = null;
                 try {
-                    super.close();
-                } catch (IOException error) {
-                    connection.disconnect();
-                    throw error;
-                }
-                int code;
-                try {
-                    code = connection.getResponseCode();
-                } catch (IOException error) {
-                    connection.disconnect();
-                    throw error;
-                }
-                try {
-                    check(connection, code, 200, 201, 204);
+                    upload.finishBody();
+                    reply = upload.reply();
+                    check(reply);
                 } finally {
-                    connection.disconnect();
+                    if (reply != null) {
+                        reply.close();
+                    }
+                    upload.close();
                 }
             }
         };
     }
 
     public void mkcol(String path) throws IOException {
-        HttpURLConnection connection = open("MKCOL", path);
+        HttpWire.Reply reply = execute("MKCOL", path, null, null);
         try {
-            int code = connection.getResponseCode();
-            check(connection, code, 200, 201, 204);
+            check(reply);
         } finally {
-            connection.disconnect();
+            reply.close();
         }
     }
 
     public void delete(String path) throws IOException {
-        HttpURLConnection connection = open("DELETE", path);
+        HttpWire.Reply reply = execute("DELETE", path, null, null);
         try {
-            int code = connection.getResponseCode();
-            if (code == 404) {
+            if (reply.code == 404) {
                 return;
             }
-            check(connection, code, 200, 204);
+            check(reply);
         } finally {
-            connection.disconnect();
+            reply.close();
         }
     }
 
@@ -166,80 +183,70 @@ public final class WebDavClient {
     }
 
     private void transfer(String method, String from, String to) throws IOException {
-        HttpURLConnection connection = open(method, from);
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("Destination", url(to));
+        headers.put("Overwrite", "T");
+        HttpWire.Reply reply = execute(method, from, headers, null);
         try {
-            connection.setRequestProperty("Destination", url(to));
-            connection.setRequestProperty("Overwrite", "T");
-            int code = connection.getResponseCode();
-            check(connection, code, 200, 201, 204);
+            check(reply);
         } finally {
-            connection.disconnect();
+            reply.close();
         }
     }
 
     private List<Entry> request(String path, int depth, boolean skipSelf) throws IOException {
-        HttpURLConnection connection = open("PROPFIND", path);
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("Depth", String.valueOf(depth));
+        headers.put("Content-Type", "application/xml; charset=utf-8");
+        HttpWire.Reply reply = execute("PROPFIND", path, headers, PROPFIND_BODY);
         try {
-            connection.setRequestProperty("Depth", String.valueOf(depth));
-            connection.setRequestProperty("Content-Type", "application/xml; charset=utf-8");
-            sendBody(connection);
-            int code = connection.getResponseCode();
-            check(connection, code, 200, 207);
+            check(reply);
             ArrayList<Entry> entries = new ArrayList<>();
-            InputStream input = connection.getInputStream();
-            try {
-                parse(input, path, skipSelf, entries);
-            } finally {
-                input.close();
-            }
+            parse(reply.body, path, skipSelf, entries);
             return entries;
         } finally {
-            connection.disconnect();
+            reply.close();
         }
     }
 
     private int propfindCode(String path, int depth) throws IOException {
-        HttpURLConnection connection = open("PROPFIND", path);
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("Depth", String.valueOf(depth));
+        headers.put("Content-Type", "application/xml; charset=utf-8");
+        HttpWire.Reply reply = execute("PROPFIND", path, headers, PROPFIND_BODY);
         try {
-            connection.setRequestProperty("Depth", String.valueOf(depth));
-            connection.setRequestProperty("Content-Type", "application/xml; charset=utf-8");
-            sendBody(connection);
-            int code = connection.getResponseCode();
-            InputStream stream = code >= 400 ? connection.getErrorStream()
-                    : connection.getInputStream();
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException ignored) {
-                }
-            }
-            return code;
+            return reply.code;
         } finally {
-            connection.disconnect();
+            reply.close();
         }
     }
 
-    private static void sendBody(HttpURLConnection connection) throws IOException {
-        byte[] body = PROPFIND_BODY.getBytes(StandardCharsets.UTF_8);
-        connection.setDoOutput(true);
-        connection.setFixedLengthStreamingMode(body.length);
-        OutputStream out = connection.getOutputStream();
-        out.write(body);
-        out.close();
-    }
-
-    private HttpURLConnection open(String method, String path) throws IOException {
-        URL url = new URL(url(path));
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod(method);
-        connection.setConnectTimeout(15000);
-        connection.setReadTimeout(30000);
-        connection.setInstanceFollowRedirects(false);
-        connection.setUseCaches(false);
-        connection.setRequestProperty("Authorization", authorization);
-        connection.setRequestProperty("User-Agent", "LumenFiles/1.0 (Android)");
-        connection.setRequestProperty("Accept-Encoding", "identity");
-        return connection;
+    private HttpWire.Reply execute(String method, String path, Map<String, String> extra,
+                                   byte[] body) throws IOException {
+        URL target = new URL(url(path));
+        for (int hop = 0; hop < 4; hop++) {
+            HttpWire.Request request = HttpWire.request(method, target, authorization);
+            if (extra != null) {
+                for (Map.Entry<String, String> entry : extra.entrySet()) {
+                    request.header(entry.getKey(), entry.getValue());
+                }
+            }
+            if (body != null) {
+                request.body(body);
+            }
+            HttpWire.Reply reply = request.execute();
+            if (reply.redirect()) {
+                String location = reply.header("Location");
+                reply.close();
+                if (location == null || location.isEmpty()) {
+                    throw new IOException("服务器要求跳转但未提供地址");
+                }
+                target = new URL(target, location);
+                continue;
+            }
+            return reply;
+        }
+        throw new IOException("服务器跳转次数过多");
     }
 
     private String url(String path) {
@@ -433,17 +440,14 @@ public final class WebDavClient {
         return 0;
     }
 
-    private static void check(HttpURLConnection connection, int code, int... allowed)
-            throws IOException {
-        for (int value : allowed) {
-            if (code == value) {
-                return;
-            }
+    private static void check(HttpWire.Reply reply) throws IOException {
+        if (reply.code >= 200 && reply.code < 300) {
+            return;
         }
-        checkCode(connection, code);
+        checkCode(reply.code, reply.header("Location"));
     }
 
-    private static void checkCode(HttpURLConnection connection, int code) throws IOException {
+    private static void checkCode(int code, String location) throws IOException {
         String message;
         switch (code) {
             case 401:
@@ -468,10 +472,9 @@ public final class WebDavClient {
                 message = "服务器存储空间不足";
                 break;
             default:
-                if (code >= 300 && code < 400 && connection != null) {
-                    String location = connection.getHeaderField("Location");
+                if (code >= 300 && code < 400) {
                     message = "服务器要求跳转" + (location == null ? "" : "：" + location)
-                            + "，请修改服务器地址";
+                            + "，请检查服务器地址";
                 } else {
                     message = "服务器返回错误 " + code;
                 }

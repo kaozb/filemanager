@@ -8,242 +8,263 @@
 package com.lumen.files;
 
 public final class R {
+  public static final class anim {
+    public static final int page_in_left=0x7f010000;
+    public static final int page_in_right=0x7f010001;
+    public static final int page_out_left=0x7f010002;
+    public static final int page_out_right=0x7f010003;
+  }
   public static final class attr {
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenAccent=0x7f010000;
+    public static final int lumenAccent=0x7f020000;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenAccent2=0x7f010001;
+    public static final int lumenAccent2=0x7f020001;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenBg=0x7f010002;
+    public static final int lumenBg=0x7f020002;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenCard=0x7f010003;
+    public static final int lumenCard=0x7f020003;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenDivider=0x7f010004;
+    public static final int lumenDivider=0x7f020004;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenRipple=0x7f010005;
+    public static final int lumenRipple=0x7f020005;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenSecondary=0x7f010006;
+    public static final int lumenSecondary=0x7f020006;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenSurface=0x7f010007;
+    public static final int lumenSurface=0x7f020007;
     /**
      * <p>May be a color value, in the form of "<code>#<i>rgb</i></code>",
      * "<code>#<i>argb</i></code>", "<code>#<i>rrggbb</i></code>", or
      * "<code>#<i>aarrggbb</i></code>".
      */
-    public static final int lumenText=0x7f010008;
+    public static final int lumenText=0x7f020008;
   }
   public static final class color {
-    public static final int dark_accent=0x7f020000;
-    public static final int dark_accent2=0x7f020001;
+    public static final int dark_accent=0x7f030000;
+    public static final int dark_accent2=0x7f030001;
     /**
      * 深色主题
      */
-    public static final int dark_bg=0x7f020002;
-    public static final int dark_card=0x7f020003;
-    public static final int dark_divider=0x7f020004;
-    public static final int dark_ripple=0x7f020005;
-    public static final int dark_secondary=0x7f020006;
-    public static final int dark_status=0x7f020007;
-    public static final int dark_surface=0x7f020008;
-    public static final int dark_text=0x7f020009;
-    public static final int launcher_bg=0x7f02000a;
-    public static final int light_accent=0x7f02000b;
-    public static final int light_accent2=0x7f02000c;
+    public static final int dark_bg=0x7f030002;
+    public static final int dark_card=0x7f030003;
+    public static final int dark_divider=0x7f030004;
+    public static final int dark_ripple=0x7f030005;
+    public static final int dark_secondary=0x7f030006;
+    public static final int dark_status=0x7f030007;
+    public static final int dark_surface=0x7f030008;
+    public static final int dark_text=0x7f030009;
+    public static final int launcher_bg=0x7f03000a;
+    public static final int light_accent=0x7f03000b;
+    public static final int light_accent2=0x7f03000c;
     /**
      * 浅色主题
      */
-    public static final int light_bg=0x7f02000d;
-    public static final int light_card=0x7f02000e;
-    public static final int light_divider=0x7f02000f;
-    public static final int light_ripple=0x7f020010;
-    public static final int light_secondary=0x7f020011;
-    public static final int light_status=0x7f020012;
-    public static final int light_surface=0x7f020013;
-    public static final int light_text=0x7f020014;
-    public static final int type_apk=0x7f020015;
-    public static final int type_archive=0x7f020016;
-    public static final int type_audio=0x7f020017;
-    public static final int type_code=0x7f020018;
-    public static final int type_doc=0x7f020019;
+    public static final int light_bg=0x7f03000d;
+    public static final int light_card=0x7f03000e;
+    public static final int light_divider=0x7f03000f;
+    public static final int light_ripple=0x7f030010;
+    public static final int light_secondary=0x7f030011;
+    public static final int light_status=0x7f030012;
+    public static final int light_surface=0x7f030013;
+    public static final int light_text=0x7f030014;
+    public static final int type_apk=0x7f030015;
+    public static final int type_archive=0x7f030016;
+    public static final int type_audio=0x7f030017;
+    public static final int type_code=0x7f030018;
+    public static final int type_doc=0x7f030019;
     /**
      * 文件类型配色
      */
-    public static final int type_image=0x7f02001a;
-    public static final int type_text=0x7f02001b;
-    public static final int type_video=0x7f02001c;
+    public static final int type_image=0x7f03001a;
+    public static final int type_text=0x7f03001b;
+    public static final int type_video=0x7f03001c;
   }
   public static final class drawable {
-    public static final int bg_card=0x7f030000;
-    public static final int bg_chip=0x7f030001;
-    public static final int bg_fab=0x7f030002;
-    public static final int bg_hero=0x7f030003;
-    public static final int bg_icon_circle=0x7f030004;
-    public static final int ic_add=0x7f030005;
-    public static final int ic_apk=0x7f030006;
-    public static final int ic_archive=0x7f030007;
-    public static final int ic_audio=0x7f030008;
-    public static final int ic_back=0x7f030009;
-    public static final int ic_chevron=0x7f03000a;
-    public static final int ic_close=0x7f03000b;
-    public static final int ic_cloud=0x7f03000c;
-    public static final int ic_code=0x7f03000d;
-    public static final int ic_copy=0x7f03000e;
-    public static final int ic_cut=0x7f03000f;
-    public static final int ic_delete=0x7f030010;
-    public static final int ic_doc=0x7f030011;
-    public static final int ic_download=0x7f030012;
-    public static final int ic_edit=0x7f030013;
-    public static final int ic_eye=0x7f030014;
-    public static final int ic_file=0x7f030015;
-    public static final int ic_file_add=0x7f030016;
-    public static final int ic_folder=0x7f030017;
-    public static final int ic_folder_add=0x7f030018;
-    public static final int ic_image=0x7f030019;
-    public static final int ic_info=0x7f03001a;
-    public static final int ic_launcher_foreground=0x7f03001b;
-    public static final int ic_more=0x7f03001c;
-    public static final int ic_refresh=0x7f03001d;
-    public static final int ic_search=0x7f03001e;
-    public static final int ic_select_all=0x7f03001f;
-    public static final int ic_server=0x7f030020;
-    public static final int ic_share=0x7f030021;
-    public static final int ic_shield=0x7f030022;
-    public static final int ic_sort=0x7f030023;
-    public static final int ic_storage=0x7f030024;
-    public static final int ic_text=0x7f030025;
-    public static final int ic_theme=0x7f030026;
-    public static final int ic_unzip=0x7f030027;
-    public static final int ic_upload=0x7f030028;
-    public static final int ic_video=0x7f030029;
-    public static final int sel_item=0x7f03002a;
+    public static final int bg_card=0x7f040000;
+    public static final int bg_chip=0x7f040001;
+    public static final int bg_fab=0x7f040002;
+    public static final int bg_hero=0x7f040003;
+    public static final int bg_icon_circle=0x7f040004;
+    public static final int ic_add=0x7f040005;
+    public static final int ic_apk=0x7f040006;
+    public static final int ic_archive=0x7f040007;
+    public static final int ic_audio=0x7f040008;
+    public static final int ic_back=0x7f040009;
+    public static final int ic_chevron=0x7f04000a;
+    public static final int ic_close=0x7f04000b;
+    public static final int ic_cloud=0x7f04000c;
+    public static final int ic_code=0x7f04000d;
+    public static final int ic_copy=0x7f04000e;
+    public static final int ic_cut=0x7f04000f;
+    public static final int ic_delete=0x7f040010;
+    public static final int ic_doc=0x7f040011;
+    public static final int ic_download=0x7f040012;
+    public static final int ic_edit=0x7f040013;
+    public static final int ic_eye=0x7f040014;
+    public static final int ic_file=0x7f040015;
+    public static final int ic_file_add=0x7f040016;
+    public static final int ic_folder=0x7f040017;
+    public static final int ic_folder_add=0x7f040018;
+    public static final int ic_image=0x7f040019;
+    public static final int ic_info=0x7f04001a;
+    public static final int ic_launcher_foreground=0x7f04001b;
+    public static final int ic_more=0x7f04001c;
+    public static final int ic_refresh=0x7f04001d;
+    public static final int ic_search=0x7f04001e;
+    public static final int ic_select_all=0x7f04001f;
+    public static final int ic_server=0x7f040020;
+    public static final int ic_share=0x7f040021;
+    public static final int ic_shield=0x7f040022;
+    public static final int ic_sort=0x7f040023;
+    public static final int ic_storage=0x7f040024;
+    public static final int ic_text=0x7f040025;
+    public static final int ic_theme=0x7f040026;
+    public static final int ic_unzip=0x7f040027;
+    public static final int ic_up=0x7f040028;
+    public static final int ic_upload=0x7f040029;
+    public static final int ic_video=0x7f04002a;
+    public static final int sel_item=0x7f04002b;
   }
   public static final class id {
-    public static final int action_about=0x7f040000;
-    public static final int action_copy=0x7f040001;
-    public static final int action_cut=0x7f040002;
-    public static final int action_delete=0x7f040003;
-    public static final int action_hidden=0x7f040004;
-    public static final int action_import=0x7f040005;
-    public static final int action_info=0x7f040006;
-    public static final int action_new_file=0x7f040007;
-    public static final int action_new_folder=0x7f040008;
-    public static final int action_permission=0x7f040009;
-    public static final int action_refresh=0x7f04000a;
-    public static final int action_rename=0x7f04000b;
-    public static final int action_search=0x7f04000c;
-    public static final int action_select_all=0x7f04000d;
-    public static final int action_share=0x7f04000e;
-    public static final int action_sort=0x7f04000f;
-    public static final int action_theme=0x7f040010;
-    public static final int action_unzip=0x7f040011;
-    public static final int action_zip=0x7f040012;
-    public static final int back=0x7f040013;
-    public static final int bar=0x7f040014;
-    public static final int chevron=0x7f040015;
-    public static final int clear=0x7f040016;
-    public static final int empty=0x7f040017;
-    public static final int fab=0x7f040018;
-    public static final int grantBtn=0x7f040019;
-    public static final int heroCard=0x7f04001a;
-    public static final int heroSub=0x7f04001b;
-    public static final int hint=0x7f04001c;
-    public static final int icon=0x7f04001d;
-    public static final int input=0x7f04001e;
-    public static final int list=0x7f04001f;
-    public static final int loading=0x7f040020;
-    public static final int meta=0x7f040021;
-    public static final int name=0x7f040022;
-    public static final int pass=0x7f040023;
-    public static final int pasteBar=0x7f040024;
-    public static final int pasteBtn=0x7f040025;
-    public static final int pasteClose=0x7f040026;
-    public static final int pasteText=0x7f040027;
-    public static final int permissionCard=0x7f040028;
-    public static final int quickGrid=0x7f040029;
-    public static final int rootsBox=0x7f04002a;
-    public static final int serversBox=0x7f04002b;
-    public static final int subtitle=0x7f04002c;
-    public static final int title=0x7f04002d;
-    public static final int toolbar=0x7f04002e;
-    public static final int url=0x7f04002f;
-    public static final int user=0x7f040030;
+    public static final int action_about=0x7f050000;
+    public static final int action_copy=0x7f050001;
+    public static final int action_cut=0x7f050002;
+    public static final int action_delete=0x7f050003;
+    public static final int action_hidden=0x7f050004;
+    public static final int action_import=0x7f050005;
+    public static final int action_info=0x7f050006;
+    public static final int action_new_file=0x7f050007;
+    public static final int action_new_folder=0x7f050008;
+    public static final int action_permission=0x7f050009;
+    public static final int action_refresh=0x7f05000a;
+    public static final int action_rename=0x7f05000b;
+    public static final int action_search=0x7f05000c;
+    public static final int action_select_all=0x7f05000d;
+    public static final int action_servers=0x7f05000e;
+    public static final int action_share=0x7f05000f;
+    public static final int action_sort=0x7f050010;
+    public static final int action_theme=0x7f050011;
+    public static final int action_unzip=0x7f050012;
+    public static final int action_zip=0x7f050013;
+    public static final int addServerBtn=0x7f050014;
+    public static final int back=0x7f050015;
+    public static final int bar=0x7f050016;
+    public static final int chevron=0x7f050017;
+    public static final int clear=0x7f050018;
+    public static final int empty=0x7f050019;
+    public static final int fab=0x7f05001a;
+    public static final int flipper=0x7f05001b;
+    public static final int grantBtn=0x7f05001c;
+    public static final int hint=0x7f05001d;
+    public static final int icon=0x7f05001e;
+    public static final int input=0x7f05001f;
+    public static final int list=0x7f050020;
+    public static final int loading=0x7f050021;
+    public static final int meta=0x7f050022;
+    public static final int name=0x7f050023;
+    public static final int paneEmpty=0x7f050024;
+    public static final int paneLeft=0x7f050025;
+    public static final int paneList=0x7f050026;
+    public static final int paneLoading=0x7f050027;
+    public static final int paneMore=0x7f050028;
+    public static final int panePath=0x7f050029;
+    public static final int paneRight=0x7f05002a;
+    public static final int paneSource=0x7f05002b;
+    public static final int paneUp=0x7f05002c;
+    public static final int pass=0x7f05002d;
+    public static final int pasteBar=0x7f05002e;
+    public static final int pasteBtn=0x7f05002f;
+    public static final int pasteClose=0x7f050030;
+    public static final int pasteText=0x7f050031;
+    public static final int permissionCard=0x7f050032;
+    public static final int quickGrid=0x7f050033;
+    public static final int serversBox=0x7f050034;
+    public static final int storageSummary=0x7f050035;
+    public static final int subtitle=0x7f050036;
+    public static final int tabFiles=0x7f050037;
+    public static final int tabSettings=0x7f050038;
+    public static final int title=0x7f050039;
+    public static final int toolbar=0x7f05003a;
+    public static final int url=0x7f05003b;
+    public static final int user=0x7f05003c;
   }
   public static final class layout {
-    public static final int activity_browser=0x7f050000;
-    public static final int activity_locations=0x7f050001;
-    public static final int activity_search=0x7f050002;
-    public static final int dialog_input=0x7f050003;
-    public static final int dialog_server=0x7f050004;
-    public static final int item_file=0x7f050005;
-    public static final int item_location=0x7f050006;
+    public static final int activity_browser=0x7f060000;
+    public static final int activity_locations=0x7f060001;
+    public static final int activity_search=0x7f060002;
+    public static final int dialog_input=0x7f060003;
+    public static final int dialog_server=0x7f060004;
+    public static final int item_file=0x7f060005;
+    public static final int item_location=0x7f060006;
+    public static final int pane_file=0x7f060007;
   }
   public static final class menu {
-    public static final int menu_browser=0x7f060000;
-    public static final int menu_locations=0x7f060001;
-    public static final int menu_multi=0x7f060002;
+    public static final int menu_browser=0x7f070000;
+    public static final int menu_locations=0x7f070001;
+    public static final int menu_multi=0x7f070002;
   }
   public static final class mipmap {
-    public static final int ic_launcher=0x7f070000;
+    public static final int ic_launcher=0x7f080000;
   }
   public static final class string {
-    public static final int app_name=0x7f080000;
-    public static final int menu_about=0x7f080001;
-    public static final int menu_copy=0x7f080002;
-    public static final int menu_cut=0x7f080003;
-    public static final int menu_delete=0x7f080004;
-    public static final int menu_hidden=0x7f080005;
-    public static final int menu_import=0x7f080006;
-    public static final int menu_info=0x7f080007;
-    public static final int menu_new_file=0x7f080008;
-    public static final int menu_new_folder=0x7f080009;
-    public static final int menu_permission=0x7f08000a;
-    public static final int menu_refresh=0x7f08000b;
-    public static final int menu_rename=0x7f08000c;
-    public static final int menu_search=0x7f08000d;
-    public static final int menu_select_all=0x7f08000e;
-    public static final int menu_share=0x7f08000f;
-    public static final int menu_sort=0x7f080010;
-    public static final int menu_theme=0x7f080011;
-    public static final int menu_unzip=0x7f080012;
-    public static final int menu_upload=0x7f080013;
-    public static final int menu_zip=0x7f080014;
+    public static final int app_name=0x7f090000;
+    public static final int menu_about=0x7f090001;
+    public static final int menu_copy=0x7f090002;
+    public static final int menu_cut=0x7f090003;
+    public static final int menu_delete=0x7f090004;
+    public static final int menu_hidden=0x7f090005;
+    public static final int menu_import=0x7f090006;
+    public static final int menu_info=0x7f090007;
+    public static final int menu_new_file=0x7f090008;
+    public static final int menu_new_folder=0x7f090009;
+    public static final int menu_permission=0x7f09000a;
+    public static final int menu_refresh=0x7f09000b;
+    public static final int menu_rename=0x7f09000c;
+    public static final int menu_search=0x7f09000d;
+    public static final int menu_select_all=0x7f09000e;
+    public static final int menu_servers=0x7f09000f;
+    public static final int menu_share=0x7f090010;
+    public static final int menu_sort=0x7f090011;
+    public static final int menu_theme=0x7f090012;
+    public static final int menu_unzip=0x7f090013;
+    public static final int menu_upload=0x7f090014;
+    public static final int menu_zip=0x7f090015;
   }
   public static final class style {
-    public static final int ActionButton=0x7f090000;
-    public static final int AppTheme=0x7f090001;
-    public static final int AppTheme_Dark=0x7f090002;
-    public static final int SectionTitle=0x7f090003;
+    public static final int ActionButton=0x7f0a0000;
+    public static final int AppTheme=0x7f0a0001;
+    public static final int AppTheme_Dark=0x7f0a0002;
+    public static final int SectionTitle=0x7f0a0003;
   }
 }

@@ -21,6 +21,7 @@
     <string name="menu_zip">压缩</string>
     <string name="menu_unzip">解压</string>
 
+    <string name="menu_servers">WebDAV 设置</string>
     <string name="menu_theme">切换主题</string>
     <string name="menu_permission">文件访问权限</string>
     <string name="menu_about">关于</string>

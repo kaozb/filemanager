@@ -49,6 +49,22 @@ public final class Prefs {
         sp(context).edit().putBoolean("show_hidden", show).apply();
     }
 
+    public static String paneSource(Context context, int pane) {
+        return sp(context).getString("pane_source_" + pane, "local");
+    }
+
+    public static void setPaneSource(Context context, int pane, String source) {
+        sp(context).edit().putString("pane_source_" + pane, source).apply();
+    }
+
+    public static String panePath(Context context, int pane, String fallback) {
+        return sp(context).getString("pane_path_" + pane, fallback);
+    }
+
+    public static void setPanePath(Context context, int pane, String path) {
+        sp(context).edit().putString("pane_path_" + pane, path).apply();
+    }
+
     public static List<Server> servers(Context context) {
         ArrayList<Server> list = new ArrayList<>();
         String raw = sp(context).getString("servers", "");
