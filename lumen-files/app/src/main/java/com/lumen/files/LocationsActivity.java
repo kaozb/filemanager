@@ -642,18 +642,28 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
                         client.list("/", 0);
                     }, () -> {
                         List<Server> servers = Prefs.servers(LocationsActivity.this);
+                        Server updated = editing;
                         if (editing == null) {
                             int nextId = 1;
                             for (Server server : servers) {
                                 nextId = Math.max(nextId, server.id + 1);
                             }
-                            servers.add(new Server(nextId, finalName, finalAddress,
-                                    finalUser, finalPass));
+                            updated = new Server(nextId, finalName, finalAddress,
+                                    finalUser, finalPass);
+                            servers.add(updated);
                         } else {
-                            editing.name = finalName;
-                            editing.url = finalAddress;
-                            editing.user = finalUser;
-                            editing.pass = finalPass;
+                            // Prefs.servers() 每次返回反序列化的新对象，
+                            // 必须按 id 找到列表内的实例修改，否则保存不生效
+                            for (Server server : servers) {
+                                if (server.id == editing.id) {
+                                    server.name = finalName;
+                                    server.url = finalAddress;
+                                    server.user = finalUser;
+                                    server.pass = finalPass;
+                                    updated = server;
+                                    break;
+                                }
+                            }
                         }
                         Prefs.saveServers(LocationsActivity.this, servers);
                         if (dialog.isShowing()) {
@@ -661,10 +671,10 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
                         }
                         if (editing != null) {
                             if (left.serverId() == editing.id) {
-                                left.setServer(editing);
+                                left.setServer(updated);
                             }
                             if (right.serverId() == editing.id) {
-                                right.setServer(editing);
+                                right.setServer(updated);
                             }
                         }
                         renderSettings();
