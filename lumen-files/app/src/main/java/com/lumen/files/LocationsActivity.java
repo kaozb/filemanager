@@ -642,40 +642,29 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
                         client.list("/", 0);
                     }, () -> {
                         List<Server> servers = Prefs.servers(LocationsActivity.this);
-                        Server updated;
                         if (editing == null) {
                             int nextId = 1;
                             for (Server server : servers) {
                                 nextId = Math.max(nextId, server.id + 1);
                             }
-                            updated = new Server(nextId, finalName, finalAddress,
-                                    finalUser, finalPass);
-                            servers.add(updated);
+                            servers.add(new Server(nextId, finalName, finalAddress,
+                                    finalUser, finalPass));
                         } else {
-                            // Prefs.servers() 每次重新解析出全新对象，
-                            // 必须按 id 找到列表里的那份再改，改 editing 无效
-                            updated = null;
-                            for (Server server : servers) {
-                                if (server.id == editing.id) {
-                                    server.name = finalName;
-                                    server.url = finalAddress;
-                                    server.user = finalUser;
-                                    server.pass = finalPass;
-                                    updated = server;
-                                    break;
-                                }
-                            }
+                            editing.name = finalName;
+                            editing.url = finalAddress;
+                            editing.user = finalUser;
+                            editing.pass = finalPass;
                         }
                         Prefs.saveServers(LocationsActivity.this, servers);
                         if (dialog.isShowing()) {
                             dialog.dismiss();
                         }
-                        if (updated != null) {
-                            if (left.serverId() == updated.id) {
-                                left.setServer(updated);
+                        if (editing != null) {
+                            if (left.serverId() == editing.id) {
+                                left.setServer(editing);
                             }
-                            if (right.serverId() == updated.id) {
-                                right.setServer(updated);
+                            if (right.serverId() == editing.id) {
+                                right.setServer(editing);
                             }
                         }
                         renderSettings();
