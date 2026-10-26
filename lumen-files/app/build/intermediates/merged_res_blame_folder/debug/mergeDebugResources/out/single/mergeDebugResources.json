@@ -112,6 +112,10 @@
         "source": "com.lumen.files.app-main-6:/drawable/ic_share.xml"
     },
     {
+        "merged": "com.lumen.files.app-debug-4:/layout_dialog_remote.xml.flat",
+        "source": "com.lumen.files.app-main-6:/layout/dialog_remote.xml"
+    },
+    {
         "merged": "com.lumen.files.app-debug-4:/anim_sheet_in.xml.flat",
         "source": "com.lumen.files.app-main-6:/anim/sheet_in.xml"
     },

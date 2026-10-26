@@ -13,7 +13,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.OpenableColumns;
-import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -582,10 +581,9 @@ public final class BrowserActivity extends BaseActivity {
     }
 
     private void showRemoteStartDialog() {
-        View content = getLayoutInflater().inflate(R.layout.dialog_input, null);
-        final EditText input = content.findViewById(R.id.input);
-        input.setText("8080");
-        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        View content = getLayoutInflater().inflate(R.layout.dialog_remote, null);
+        final EditText portInput = content.findViewById(R.id.input_port);
+        final EditText passwordInput = content.findViewById(R.id.input_password);
         new AlertDialog.Builder(this)
                 .setTitle("开启远程管理")
                 .setMessage("把当前目录共享到局域网，同一 Wi-Fi 下的设备"
@@ -595,7 +593,7 @@ public final class BrowserActivity extends BaseActivity {
                 .setPositiveButton("开启", (dialog, which) -> {
                     int port;
                     try {
-                        port = Integer.parseInt(input.getText().toString().trim());
+                        port = Integer.parseInt(portInput.getText().toString().trim());
                     } catch (NumberFormatException error) {
                         Bg.toast(this, "端口必须是数字");
                         return;
@@ -604,14 +602,14 @@ public final class BrowserActivity extends BaseActivity {
                         Bg.toast(this, "端口范围 1024 - 65535");
                         return;
                     }
-                    startRemote(port);
+                    startRemote(port, passwordInput.getText().toString());
                 })
                 .show();
     }
 
-    private void startRemote(final int port) {
+    private void startRemote(final int port, final String password) {
         final File dir = new File(path);
-        Bg.run(this, "正在开启远程管理…", () -> HttpShareServer.start(dir, port), () -> {
+        Bg.run(this, "正在开启远程管理…", () -> HttpShareServer.start(dir, port, password), () -> {
             HttpShareServer server = HttpShareServer.current();
             if (server != null) {
                 showRemoteStatus(server);
@@ -626,7 +624,8 @@ public final class BrowserActivity extends BaseActivity {
                 .setTitle("远程管理进行中")
                 .setMessage("目录：" + server.root().getAbsolutePath()
                         + "\n\n在浏览器打开：\n" + url
-                        + "\n\n需要与手机在同一 Wi-Fi。")
+                        + "\n\n需要与手机在同一 Wi-Fi。"
+                        + (server.hasPassword() ? "\n已启用访问密码。" : ""))
                 .setPositiveButton("复制地址", (dialog, which) -> {
                     ClipboardManager manager =
                             (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);

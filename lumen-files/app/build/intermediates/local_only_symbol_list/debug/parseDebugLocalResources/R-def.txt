@@ -140,6 +140,8 @@ id grantBtn
 id hint
 id icon
 id input
+id input_password
+id input_port
 id list
 id loading
 id meta
@@ -187,6 +189,7 @@ layout activity_locations
 layout activity_search
 layout bar_selection
 layout dialog_input
+layout dialog_remote
 layout dialog_server
 layout item_file
 layout item_location

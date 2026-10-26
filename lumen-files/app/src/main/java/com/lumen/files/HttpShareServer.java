@@ -1,5 +1,6 @@
 package com.lumen.files;
 
+import android.util.Base64;
 import android.webkit.MimeTypeMap;
 
 import java.io.BufferedInputStream;
@@ -26,13 +27,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.security.MessageDigest;
 
 /**
  * 局域网远程管理：把一个本地目录以极简 Web 页面共享出去。
  *
  * <p>与 HttpWire 同思路——不引第三方依赖，用 ServerSocket 手写 HTTP/1.1。
- * 支持目录浏览、下载（含 Range 分段，浏览器可在线播放音视频）与
- * multipart/form-data 上传。同一时刻最多运行一个实例。</p>
+ * 支持目录浏览、下载（含 Range 分段，浏览器可在线播放音视频）、
+ * multipart/form-data 上传，以及可选的 HTTP Basic 访问密码。
+ * 同一时刻最多运行一个实例。</p>
  */
 public final class HttpShareServer {
 
@@ -46,13 +49,14 @@ public final class HttpShareServer {
         return active;
     }
 
-    /** 在指定端口共享目录；端口被占用等失败时抛 IOException。 */
-    public static HttpShareServer start(File root, int port) throws IOException {
+    /** 在指定端口共享目录；端口被占用等失败时抛 IOException。密码为空表示不加密。 */
+    public static HttpShareServer start(File root, int port, String password) throws IOException {
         stopActive();
         if (!root.isDirectory()) {
             throw new IOException("目录不存在：" + root.getAbsolutePath());
         }
-        HttpShareServer server = new HttpShareServer(root, port);
+        HttpShareServer server = new HttpShareServer(root, port,
+                password == null ? "" : password.trim());
         server.begin();
         active = server;
         return server;
@@ -88,13 +92,15 @@ public final class HttpShareServer {
     private final File root;
     private final String rootPath;
     private final int port;
+    private final String password;
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private volatile ServerSocket serverSocket;
     private volatile boolean running;
 
-    private HttpShareServer(File root, int port) {
+    private HttpShareServer(File root, int port, String password) {
         this.root = root;
         this.port = port;
+        this.password = password;
         String canonical;
         try {
             canonical = root.getCanonicalPath();
@@ -110,6 +116,11 @@ public final class HttpShareServer {
 
     public int port() {
         return port;
+    }
+
+    /** 是否启用了访问密码。 */
+    public boolean hasPassword() {
+        return !password.isEmpty();
     }
 
     // ------------------------------------------------------------------ 生命周期
@@ -150,6 +161,40 @@ public final class HttpShareServer {
         }
     }
 
+    // ------------------------------------------------------------------ 访问密码
+
+    /** 未设密码直接放行；设了密码则校验 HTTP Basic 认证（用户名不限，比对密码）。 */
+    private boolean authorized(Map<String, String> headers) {
+        if (password.isEmpty()) {
+            return true;
+        }
+        String header = headers.get("authorization");
+        if (header == null || !header.regionMatches(true, 0, "Basic ", 0, 6)) {
+            return false;
+        }
+        try {
+            byte[] decoded = Base64.decode(header.substring(6).trim(), Base64.DEFAULT);
+            String credential = new String(decoded, StandardCharsets.UTF_8);
+            int colon = credential.indexOf(':');
+            String given = colon < 0 ? "" : credential.substring(colon + 1);
+            return MessageDigest.isEqual(password.getBytes(StandardCharsets.UTF_8),
+                    given.getBytes(StandardCharsets.UTF_8));
+        } catch (IllegalArgumentException error) {
+            return false;
+        }
+    }
+
+    /** 401 + WWW-Authenticate，浏览器会自动弹出账号密码输入框。 */
+    private static void sendUnauthorized(OutputStream output) throws IOException {
+        byte[] body = ("<html><head><meta charset=\"utf-8\"><title>401</title></head>"
+                + "<body style=\"font-family:system-ui;text-align:center;padding-top:60px\">"
+                + "<h1 style=\"color:#5f6368\">401</h1><p>此共享目录已启用访问密码</p></body></html>")
+                .getBytes(StandardCharsets.UTF_8);
+        writeHead(output, 401, "Unauthorized", "text/html; charset=utf-8", body.length,
+                "WWW-Authenticate: Basic realm=\"LumenFiles\"");
+        output.write(body);
+    }
+
     // ------------------------------------------------------------------ 请求处理
 
     private void serve(Socket socket) {
@@ -168,6 +213,10 @@ public final class HttpShareServer {
             }
             String method = parts[0].toUpperCase(Locale.US);
             Map<String, String> headers = readHeaders(input);
+            if (!authorized(headers)) {
+                sendUnauthorized(output);
+                return;
+            }
             route(input, output, method, parts[1], headers);
         } catch (IOException ignored) {
             // 客户端提前断开等，直接关闭即可
