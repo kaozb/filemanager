@@ -51,7 +51,7 @@
 
         </LinearLayout>
 
-        <!-- 快捷入口：添加服务器占 1/4，其余三个预留 -->
+        <!-- 快捷入口：添加服务器 + 远程管理，后两个预留 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -72,15 +72,18 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/remoteBtn"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_chip"
+                android:fontFamily="sans-serif-medium"
                 android:gravity="center"
-                android:text="预留"
-                android:textColor="?attr/lumenSecondary"
-                android:textSize="12sp" />
+                android:text="远程管理"
+                android:textColor="?attr/lumenAccent"
+                android:textSize="12sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="0dp"

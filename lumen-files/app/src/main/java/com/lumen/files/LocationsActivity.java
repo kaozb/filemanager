@@ -326,6 +326,10 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         sheet.findViewById(R.id.sheetClose).setOnClickListener(v -> dialog.dismiss());
         sheet.findViewById(R.id.addServerBtn).setOnClickListener(v ->
                 showServerDialog(null));
+        sheet.findViewById(R.id.remoteBtn).setOnClickListener(v -> {
+            dialog.dismiss();
+            showRemoteMenu(sharedDirectory());
+        });
         sheet.findViewById(R.id.grantBtn).setOnClickListener(v ->
                 StorageUtil.requestAccess(this));
 
@@ -367,6 +371,15 @@ public final class LocationsActivity extends BaseActivity implements PaneControl
         permissionCard.setVisibility(granted ? View.GONE : View.VISIBLE);
 
         renderSourceTiles();
+    }
+
+    /** 远程管理共享的目录：当前面板是本地目录就共享它，否则共享内部存储根目录。 */
+    private File sharedDirectory() {
+        PaneController pane = currentPane();
+        if (pane.fs().isLocal()) {
+            return new File(pane.path());
+        }
+        return Environment.getExternalStorageDirectory();
     }
 
     /**

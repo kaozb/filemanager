@@ -1,7 +1,10 @@
 package com.lumen.files;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -13,9 +16,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toolbar;
+
+import java.io.File;
 
 /** 统一处理主题、颜色、Toolbar 外观与底部操作面板。 */
 public abstract class BaseActivity extends Activity {
@@ -206,5 +212,76 @@ public abstract class BaseActivity extends Activity {
             window.setGravity(Gravity.CENTER);
         }
         dialog.show();
+    }
+
+    // ------------------------------------------------------------------ 远程管理
+
+    /** 远程管理入口：已有实例时显示状态，否则弹端口/密码输入。dir 为要共享的目录。 */
+    protected void showRemoteMenu(File dir) {
+        HttpShareServer running = HttpShareServer.current();
+        if (running != null) {
+            showRemoteStatus(running);
+            return;
+        }
+        showRemoteStartDialog(dir);
+    }
+
+    private void showRemoteStartDialog(final File dir) {
+        View content = getLayoutInflater().inflate(R.layout.dialog_remote, null);
+        final EditText portInput = content.findViewById(R.id.input_port);
+        final EditText passwordInput = content.findViewById(R.id.input_password);
+        new AlertDialog.Builder(this)
+                .setTitle("开启远程管理")
+                .setMessage("把当前目录共享到局域网，同一 Wi-Fi 下的设备"
+                        + "用浏览器即可浏览、下载和上传。")
+                .setView(content)
+                .setNegativeButton("取消", null)
+                .setPositiveButton("开启", (dialog, which) -> {
+                    int port;
+                    try {
+                        port = Integer.parseInt(portInput.getText().toString().trim());
+                    } catch (NumberFormatException error) {
+                        Bg.toast(this, "端口必须是数字");
+                        return;
+                    }
+                    if (port < 1024 || port > 65535) {
+                        Bg.toast(this, "端口范围 1024 - 65535");
+                        return;
+                    }
+                    startRemote(dir, port, passwordInput.getText().toString());
+                })
+                .show();
+    }
+
+    private void startRemote(final File dir, final int port, final String password) {
+        Bg.run(this, "正在开启远程管理…", () -> HttpShareServer.start(dir, port, password), () -> {
+            HttpShareServer server = HttpShareServer.current();
+            if (server != null) {
+                showRemoteStatus(server);
+            }
+        });
+    }
+
+    private void showRemoteStatus(HttpShareServer server) {
+        String address = HttpShareServer.lanAddress();
+        String url = "http://" + (address == null ? "<手机IP>" : address) + ":" + server.port();
+        new AlertDialog.Builder(this)
+                .setTitle("远程管理进行中")
+                .setMessage("目录：" + server.root().getAbsolutePath()
+                        + "\n\n在浏览器打开：\n" + url
+                        + "\n\n需要与手机在同一 Wi-Fi。"
+                        + (server.hasPassword() ? "\n已启用访问密码。" : ""))
+                .setPositiveButton("复制地址", (dialog, which) -> {
+                    ClipboardManager manager =
+                            (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    manager.setPrimaryClip(ClipData.newPlainText("url", url));
+                    Bg.toast(this, "地址已复制");
+                })
+                .setNegativeButton("继续", null)
+                .setNeutralButton("停止共享", (dialog, which) -> {
+                    HttpShareServer.stopActive();
+                    Bg.toast(this, "远程管理已关闭");
+                })
+                .show();
     }
 }

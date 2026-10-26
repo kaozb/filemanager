@@ -164,6 +164,7 @@ id permissionCard
 id prefDark
 id prefHidden
 id refresh
+id remoteBtn
 id rowSizeRow
 id rowSizeValue
 id selectionAll
