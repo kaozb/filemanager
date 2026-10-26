@@ -119,6 +119,7 @@ id action_import
 id action_new_file
 id action_new_folder
 id action_refresh
+id action_remote
 id action_search
 id action_select_all
 id action_settings
@@ -204,6 +205,7 @@ string menu_info
 string menu_new_file
 string menu_new_folder
 string menu_refresh
+string menu_remote
 string menu_rename
 string menu_search
 string menu_select_all

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.lumen.files"
     android:versionCode="9"
-    android:versionName="10.26.2.40" >
+    android:versionName="10.26.8.41" >
 
     <uses-sdk
         android:minSdkVersion="21"

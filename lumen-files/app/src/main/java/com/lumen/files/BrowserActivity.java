@@ -2,6 +2,7 @@ package com.lumen.files;
 
 import android.app.AlertDialog;
 import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -12,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.OpenableColumns;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -405,6 +407,10 @@ public final class BrowserActivity extends BaseActivity {
             importItem.setTitle(fs != null && fs.isLocal()
                     ? R.string.menu_import : R.string.menu_upload);
         }
+        MenuItem remote = menu.findItem(R.id.action_remote);
+        if (remote != null) {
+            remote.setVisible(fs != null && fs.isLocal());
+        }
         tintMenu(menu);
     }
 
@@ -442,6 +448,10 @@ public final class BrowserActivity extends BaseActivity {
         }
         if (id == R.id.action_import) {
             pickFiles();
+            return true;
+        }
+        if (id == R.id.action_remote) {
+            showRemoteMenu();
             return true;
         }
         if (id == R.id.action_select_all) {
@@ -558,6 +568,77 @@ public final class BrowserActivity extends BaseActivity {
             load(path);
             Bg.toast(this, "已创建文件");
         }));
+    }
+
+    // ------------------------------------------------------------------ 远程管理
+
+    private void showRemoteMenu() {
+        HttpShareServer running = HttpShareServer.current();
+        if (running != null) {
+            showRemoteStatus(running);
+            return;
+        }
+        showRemoteStartDialog();
+    }
+
+    private void showRemoteStartDialog() {
+        View content = getLayoutInflater().inflate(R.layout.dialog_input, null);
+        final EditText input = content.findViewById(R.id.input);
+        input.setText("8080");
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        new AlertDialog.Builder(this)
+                .setTitle("开启远程管理")
+                .setMessage("把当前目录共享到局域网，同一 Wi-Fi 下的设备"
+                        + "用浏览器即可浏览、下载和上传。")
+                .setView(content)
+                .setNegativeButton("取消", null)
+                .setPositiveButton("开启", (dialog, which) -> {
+                    int port;
+                    try {
+                        port = Integer.parseInt(input.getText().toString().trim());
+                    } catch (NumberFormatException error) {
+                        Bg.toast(this, "端口必须是数字");
+                        return;
+                    }
+                    if (port < 1024 || port > 65535) {
+                        Bg.toast(this, "端口范围 1024 - 65535");
+                        return;
+                    }
+                    startRemote(port);
+                })
+                .show();
+    }
+
+    private void startRemote(final int port) {
+        final File dir = new File(path);
+        Bg.run(this, "正在开启远程管理…", () -> HttpShareServer.start(dir, port), () -> {
+            HttpShareServer server = HttpShareServer.current();
+            if (server != null) {
+                showRemoteStatus(server);
+            }
+        });
+    }
+
+    private void showRemoteStatus(HttpShareServer server) {
+        String address = HttpShareServer.lanAddress();
+        String url = "http://" + (address == null ? "<手机IP>" : address) + ":" + server.port();
+        new AlertDialog.Builder(this)
+                .setTitle("远程管理进行中")
+                .setMessage("目录：" + server.root().getAbsolutePath()
+                        + "\n\n在浏览器打开：\n" + url
+                        + "\n\n需要与手机在同一 Wi-Fi。")
+                .setPositiveButton("复制地址", (dialog, which) -> {
+                    ClipboardManager manager =
+                            (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    manager.setPrimaryClip(ClipData.newPlainText("url", url));
+                    Bg.toast(this, "地址已复制");
+                })
+                .setNegativeButton("继续", null)
+                .setNeutralButton("停止共享", (dialog, which) -> {
+                    HttpShareServer.stopActive();
+                    Bg.toast(this, "远程管理已关闭");
+                })
+                .show();
     }
 
     private void pickFiles() {
