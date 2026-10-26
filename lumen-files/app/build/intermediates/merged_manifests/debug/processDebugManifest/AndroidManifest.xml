@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.lumen.files"
-    android:versionCode="11"
-    android:versionName="10.26.9.17" >
+    android:versionCode="12"
+    android:versionName="10.26.9.22" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -17,13 +17,16 @@
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
         android:debuggable="true"
         android:extractNativeLibs="true"
         android:icon="@mipmap/ic_launcher"
-        android:label="超级文件 11"
+        android:label="超级文件 12"
         android:requestLegacyExternalStorage="true"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
@@ -51,6 +54,11 @@
             android:authorities="com.lumen.files.files"
             android:exported="false"
             android:grantUriPermissions="true" />
+
+        <service
+            android:name="com.lumen.files.ShareService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
     </application>
 
 </manifest>

@@ -5,8 +5,10 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.TypedValue;
@@ -254,12 +256,25 @@ public abstract class BaseActivity extends Activity {
     }
 
     private void startRemote(final File dir, final int port, final String password) {
+        ensureNotifyPermission();
         Bg.run(this, "正在开启远程管理…", () -> HttpShareServer.start(dir, port, password), () -> {
             HttpShareServer server = HttpShareServer.current();
             if (server != null) {
+                // 前台服务保活：否则切后台进程被冻结，Web 立刻不可用
+                ShareService.start(this);
                 showRemoteStatus(server);
             }
         });
+    }
+
+    /** Android 13 起通知需要运行时授权；不授权服务照常运行，只是通知不显示。 */
+    private void ensureNotifyPermission() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            String permission = "android.permission.POST_NOTIFICATIONS";
+            if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{permission}, 6001);
+            }
+        }
     }
 
     private void showRemoteStatus(HttpShareServer server) {
@@ -279,6 +294,7 @@ public abstract class BaseActivity extends Activity {
                 })
                 .setNegativeButton("继续", null)
                 .setNeutralButton("停止共享", (dialog, which) -> {
+                    ShareService.stop(this);
                     HttpShareServer.stopActive();
                     Bg.toast(this, "远程管理已关闭");
                 })
